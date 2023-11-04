@@ -15,12 +15,14 @@ Form of communication: Discord
 Comparing various sorting algorithms
 
 ## 2. _due 10/25_ Brief project description (what algorithms will you be comparing and on what architectures)
-- Bitonic Sort (MPI + CUDA)
+- Bitonic Sort (CUDA)
 - Bitonic Sort (MPI)
-- Merge Sort (MPI + CUDA)
+- Merge Sort (CUDA)
 - Merge Sort (MPI)
-- Quick Sort (MPI + CUDA)
+- Quick Sort (CUDA)
 - Quick Sort (MPI)
+- Bubble Sort (CUDA)
+- Bubble Sort (MPI)
 
 We will use inputs of varying sizes and compare amongst each sort on multiple GPUs and on a CPU.
 
