@@ -1,11 +1,3 @@
-/*
- * Parallel bitonic sort using CUDA.
- * Compile with
- * nvcc bitonic_sort.cu
- * Based on http://www.tools-of-computing.com/tc/CS/Sorts/bitonic_sort.htm
- * License: BSD 3
- */
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
@@ -15,19 +7,12 @@
 #include <adiak.hpp>
 #include <cuda_runtime.h>
 #include <cuda.h> 
+#include <iostream>
+#include <cstdlib>
+#include <ctime>
 
-int THREADS;
-int BLOCKS;
-int NUM_VALS;
-
-// const char* bitonic_sort_step_region = "bitonic_sort_step";
-// const char* cudaMemcpy_host_to_device = "cudaMemcpy_host_to_device";
-// const char* cudaMemcpy_device_to_host = "cudaMemcpy_device_to_host";
 const char* comp = "comp";
-//const char* comp_large = "comp_large";
 const char* main_region = "main_region";
-// const char* comm = "comm";
-//const char* comm_large = "comm_large";
 const char* cudaMemcpy1 = "cudaMemcpy1";
 const char* cudaMemcpy2 = "cudaMemcpy2";
 const char* data_init = "data_init";
@@ -37,6 +22,10 @@ cudaEvent_t start_cudaMemcpy1, stop_cudaMemcpy1;
 cudaEvent_t start_cudaMemcpy2, stop_cudaMemcpy2;
 cudaEvent_t start_main, stop_main;
 cudaEvent_t start_data_init, stop_data_init;
+
+int THREADS;
+int BLOCKS;
+int NUM_VALS;
 
 void print_elapsed(clock_t start, clock_t stop)
 {
@@ -79,88 +68,81 @@ bool correctness_check(float *arr, int length)
     return true;
 }
 
-__global__ void bitonic_sort_step(float *dev_values, int j, int k)
-{
-  unsigned int i, ixj; /* Sorting partners: i and ixj */
-  i = threadIdx.x + blockDim.x * blockIdx.x;
-  ixj = i^j;
 
-  /* The threads with the lowest ids sort the array. */
-  if ((ixj)>i) {
-    if ((i&k)==0) {
-      /* Sort ascending */
-      if (dev_values[i]>dev_values[ixj]) {
-        /* exchange(i,ixj); */
-        float temp = dev_values[i];
-        dev_values[i] = dev_values[ixj];
-        dev_values[ixj] = temp;
-      }
+__global__ void merge(float *list, float *sorted, int n, int width) {
+    int idx = threadIdx.x + blockDim.x * blockIdx.x;
+    int start = idx * width * 2;
+    int mid = start + width;
+    int end = start + 2 * width;
+    int i = start;
+    int j = mid;
+    int k = start;
+
+    if (start >= n) return;
+
+    if (end > n) end = n;
+    if (mid > n) mid = n;
+
+    while (i < mid && j < end) {
+        if (list[i] < list[j]) {
+            sorted[k++] = list[i++];
+        } else {
+            sorted[k++] = list[j++];
+        }
     }
-    if ((i&k)!=0) {
-      /* Sort descending */
-      if (dev_values[i]<dev_values[ixj]) {
-        /* exchange(i,ixj); */
-        float temp = dev_values[i];
-        dev_values[i] = dev_values[ixj];
-        dev_values[ixj] = temp;
-      }
-    }
-  }
+
+    while (i < mid) sorted[k++] = list[i++];
+    while (j < end) sorted[k++] = list[j++];
 }
 
-/**
- * Inplace bitonic sort using CUDA.
- */
-void bitonic_sort(float *values)
-{
-  float *dev_values;
-  size_t size = NUM_VALS * sizeof(float);
+void merge_sort(float *values) {
+    float *d_values, *d_sorted;
+    size_t size = NUM_VALS * sizeof(float);
+    float *temp;
 
-  cudaMalloc((void**) &dev_values, size);
-  
-  //MEM COPY FROM HOST TO DEVICE
-  CALI_MARK_BEGIN(cudaMemcpy1);
-  cudaEventRecord(start_cudaMemcpy1);
-  cudaMemcpy(dev_values, values, size, cudaMemcpyHostToDevice);
-  cudaEventRecord(stop_cudaMemcpy1);
-  cudaEventSynchronize(stop_cudaMemcpy1);
-  CALI_MARK_END(cudaMemcpy1);
+    cudaMalloc((void**) &d_values, size);
+    cudaMalloc((void**) &d_sorted, size);
 
-  dim3 blocks(BLOCKS,1);    /* Number of blocks   */
-  dim3 threads(THREADS,1);  /* Number of threads  */
+    // Copy from host to device
+    CALI_MARK_BEGIN(cudaMemcpy1);
+    cudaEventRecord(start_cudaMemcpy1);
+    cudaMemcpy(d_values, values, size, cudaMemcpyHostToDevice);
+    cudaEventRecord(stop_cudaMemcpy1);
+    cudaEventSynchronize(stop_cudaMemcpy1);
+    CALI_MARK_END(cudaMemcpy1);
 
-  int j, k;
-  CALI_MARK_BEGIN(comp);
-  // CALI_MARK_BEGIN(comp_large);
-  cudaEventRecord(start_comp);
-  /* Major step */
-  for (k = 2; k <= NUM_VALS; k <<= 1) {
-    /* Minor step */
-    for (j=k>>1; j>0; j=j>>1) {
-      //BITONIC_SORT_STEP 
-      bitonic_sort_step<<<blocks, threads>>>(dev_values, j, k);
-      cudaDeviceSynchronize();
+    dim3 blocks(BLOCKS, 1);
+    dim3 threads(THREADS, 1);
+
+    int width;
+    CALI_MARK_BEGIN(comp);
+    cudaEventRecord(start_comp);
+    for (width = 1; width < NUM_VALS; width *= 2) {
+        merge<<<blocks, threads>>>(d_values, d_sorted, NUM_VALS, width);
+        cudaDeviceSynchronize();
+
+        // Swap pointers
+        temp = d_values;
+        d_values = d_sorted;
+        d_sorted = temp;
     }
-  }
-  cudaEventRecord(stop_comp);
-  cudaEventSynchronize(stop_comp);
-  // CALI_MARK_END(comp_large);
-  CALI_MARK_END(comp);
+    cudaEventRecord(stop_comp);
+    cudaEventSynchronize(stop_comp);
+    CALI_MARK_END(comp);
 
-  
-  //MEM COPY FROM DEVICE TO HOST
-  CALI_MARK_BEGIN(cudaMemcpy2);
-  cudaEventRecord(start_cudaMemcpy2);
-  cudaMemcpy(values, dev_values, size, cudaMemcpyDeviceToHost);
-  cudaEventRecord(stop_cudaMemcpy2);
-  cudaEventSynchronize(stop_cudaMemcpy2);
-  CALI_MARK_END(cudaMemcpy2);
-  
-  cudaFree(dev_values);
+    // Copy from device to host
+    CALI_MARK_BEGIN(cudaMemcpy2);
+    cudaEventRecord(start_cudaMemcpy2);
+    cudaMemcpy(values, d_values, size, cudaMemcpyDeviceToHost);
+    cudaEventRecord(stop_cudaMemcpy2);
+    cudaEventSynchronize(stop_cudaMemcpy2);
+    CALI_MARK_END(cudaMemcpy2);
+
+    cudaFree(d_values);
+    cudaFree(d_sorted);
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
 
   CALI_MARK_BEGIN(main_region);
   cudaEventCreate(&start_main);
@@ -199,7 +181,7 @@ int main(int argc, char *argv[])
   CALI_MARK_END(data_init);
 
   start = clock();
-  bitonic_sort(random_values); /* Inplace */
+  merge_sort(random_values); /* Inplace */
   stop = clock();
 
   print_elapsed(start, stop);
@@ -229,7 +211,7 @@ int main(int argc, char *argv[])
   adiak::libraries();
   adiak::cmdline();
   adiak::clustername();
-  adiak::value("Algorithm", "Bitonic_Sort");
+  adiak::value("Algorithm", "Merge_Sort");
   adiak::value("Programming_Model", "CUDA");
   adiak::value("Datatype", "float");
   adiak::value("SizeOfDatatype", sizeof(float));
