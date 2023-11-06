@@ -5,6 +5,8 @@ find_package(caliper REQUIRED)
 find_package(adiak REQUIRED)
 
 add_executable(mergesort merge_sort.cpp)
+add_executable(bubblesort bubble_sort.cpp)
+add_executable(bitonicsort bitonic_sort.cpp)
 
 message(STATUS "MPI includes : ${MPI_INCLUDE_PATH}")
 message(STATUS "Caliper includes : ${caliper_INCLUDE_DIR}")
@@ -15,3 +17,7 @@ include_directories(${adiak_INCLUDE_DIRS})
 
 target_link_libraries(mergesort PRIVATE MPI::MPI_CXX)
 target_link_libraries(mergesort PRIVATE caliper)
+target_link_libraries(bubblesort PRIVATE MPI::MPI_CXX)
+target_link_libraries(bubblesort PRIVATE caliper)
+target_link_libraries(bitonicsort PRIVATE MPI::MPI_CXX)
+target_link_libraries(bitonicsort PRIVATE caliper)
