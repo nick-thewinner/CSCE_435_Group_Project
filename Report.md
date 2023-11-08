@@ -117,7 +117,15 @@ return
  
 - After sorting locally, the segments are gathered back to the root process using MPI_Gather. 
  
-- The root process then performs a final quick sort to merge these sorted segments into a fully sorted array. F
+- The root process then performs a final quick sort to merge these sorted segments into a fully sorted array.
+
+# merge sort MPI
+- This is an MPI-based implementation of the parallel merge sort algorithm
+
+- The array is then divided among all processes using MPI_Scatter, and each process performs a local merge sort on its part of the array. After sorting, the local arrays are gathered back using MPI_Gather.
+
+- This recrusive algorithim keeps merging the sorted subarrays to get the final whole sorted array. 
+ 
 
 
 
