@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <mpi.h>
 #include <iostream>
+#include <caliper/cali.h>
+#include <caliper/cali-manager.h>
+#include <adiak.hpp>
 
 void swap(int* a, int* b) {
     int temp = *a;
@@ -92,26 +95,27 @@ void parallelQuickSort(int* arr, int low, int high) {
 }
 
 int main(int argc, char** argv) {
-    // Start of Main 
+    // Start of Main
+    CALI_MARK_BEGIN(main_region);
     MPI_Init(&argc, &argv);
     int rank, size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
     int n = std::stoi(argv[1]); // Total number of elements
-    // Start of Data Init
-    CALI_MARK_BEGIN(data_init);
     int* arr = NULL;
 
     if (rank == 0) {
+        // Start of Data Init
+        CALI_MARK_BEGIN(data_init);
         // Initialize the array with random values on the root process
         arr = (int*)malloc(n * sizeof(int));
         for (int i = 0; i < n; i++) {
             arr[i] = rand() % 100;
         }
+        // End of Data Init
+        CALI_MARK_END(data_init);
     }
-    // End of Data Init
-    CALI_MARK_END(data_init);
 
     parallelQuickSort(arr, 0, n - 1);
 
@@ -126,6 +130,9 @@ int main(int argc, char** argv) {
     }
 
     MPI_Finalize();
+
+    // End of main
+    CALI_MARK_END(main_region);
 
     adiak::init(NULL);
     adiak::user();
@@ -144,8 +151,7 @@ int main(int argc, char** argv) {
     adiak::value("implementation_source", "Online, AI") // Where you got the source code of your algorithm; choices: ("Online", "AI", "Handwritten").
 
     // Flush Caliper output before finalizing MPI
-    // End of main
-    CALI_MARK_END(main_region);
+    
     mgr.stop();
     mgr.flush();
 

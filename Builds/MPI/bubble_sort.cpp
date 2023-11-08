@@ -3,6 +3,9 @@
 #include <cstdlib>
 #include <ctime>
 #include <mpi.h>
+#include <caliper/cali.h>
+#include <caliper/cali-manager.h>
+#include <adiak.hpp>
 
 bool correctness_check(const std::vector<int>& arr) {
     for (size_t i = 1; i < arr.size(); i++) {
@@ -44,6 +47,7 @@ std::vector<int> populate_random_array(size_t num_elements) {
 
   int main(int argc, char *argv[]) {
     // Start of Main
+    CALI_MARK_BEGIN(main_region);
     MPI_Init(&argc, &argv);
 
     int world_size;
@@ -114,6 +118,9 @@ std::vector<int> populate_random_array(size_t num_elements) {
     CALI_MARK_END(comm);
     MPI_Finalize();
 
+    // End of Main
+    CALI_MARK_END(main_region);
+
     adiak::init(NULL);
     adiak::user();
     adiak::launchdate();                                         // launch date of the job
@@ -131,8 +138,6 @@ std::vector<int> populate_random_array(size_t num_elements) {
     adiak::value("implementation_source", "Online, AI") // Where you got the source code of your algorithm; choices: ("Online", "AI", "Handwritten").
 
     // Flush Caliper output before finalizing MPI
-    // End of Main
-    CALI_MARK_END(main_region);
     mgr.stop();
     mgr.flush();
 

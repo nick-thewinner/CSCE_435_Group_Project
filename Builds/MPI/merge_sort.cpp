@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <mpi.h>
 #include <iostream>
+#include <caliper/cali.h>
+#include <caliper/cali-manager.h>
+#include <adiak.hpp>
 void merge(int* arr, int* temp, int low, int mid, int high) {
     int i = low;
     int j = mid + 1;
@@ -144,6 +147,9 @@ int main(int argc, char** argv) {
     free(temp);
     MPI_Finalize();
 
+    // End of Main
+    CALI_MARK_END(main_region);
+
     adiak::init(NULL);
     adiak::user();
     adiak::launchdate();                                         // launch date of the job
@@ -161,8 +167,6 @@ int main(int argc, char** argv) {
     adiak::value("implementation_source", "Online, AI") // Where you got the source code of your algorithm; choices: ("Online", "AI", "Handwritten").
 
     // Flush Caliper output before finalizing MPI
-    // End of Main
-    CALI_MARK_END(main_region);
     mgr.stop();
     mgr.flush();
 

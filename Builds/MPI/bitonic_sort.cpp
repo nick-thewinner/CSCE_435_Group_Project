@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <mpi.h>
 #include <iostream>
+#include <caliper/cali.h>
+#include <caliper/cali-manager.h>
+#include <adiak.hpp>
 
 const char* comp = "comp";
 const char* comp_small = "comp_small";
@@ -113,13 +116,13 @@ int main(int argc, char **argv)
         // End of Comp
         CALI_MARK_END(comp);
 
-        // Print the sorted array - need to comment out this when running 
-        printf("Sorted Array: ");
-        for (int i = 0; i < n; i++)
-        {
-            printf("%d ", recvbuf[i]);
-        }
-        printf("\n");
+        // // Print the sorted array - need to comment out this when running 
+        // printf("Sorted Array: ");
+        // for (int i = 0; i < n; i++)
+        // {
+        //     printf("%d ", recvbuf[i]);
+        // }
+        // printf("\n");
     }
 
     free(arr);
@@ -129,6 +132,8 @@ int main(int argc, char **argv)
     }
 
     MPI_Finalize();
+    // End of Main
+    CALI_MARK_END(main_region);
 
     adiak::init(NULL);
     adiak::user();
@@ -146,8 +151,6 @@ int main(int argc, char **argv)
     adiak::value("group_num", "11");                     // The number of your group (integer, e.g., 1, 10)
     adiak::value("implementation_source", "Online, AI") // Where you got the source code of your algorithm; choices: ("Online", "AI", "Handwritten").
 
-    // End of Main
-    CALI_MARK_END(main_region);
     // Flush Caliper output before finalizing MPI
     mgr.stop();
     mgr.flush();
