@@ -83,3 +83,43 @@ function quicksort(array) {
 		quicksort(subarray2);
 	end
 return
+
+## psuedo code
+
+# Bitonic Sort MPI
+
+- This C++ code implements a parallel version of the Bitonic Sort algorithm using the MPI library.
+
+- The program begins by initializing the MPI environment and determining the rank, which is the unique identifier for each process and the siza and the total number of processes running in parallel. 
+
+- Each process calculates the portion of the array it needs to sort based on the total number of elements n, which is provided as an input argument to the program.
+
+- Once the local sorting is complete, all sorted subsets are gathered to the root process, the process with rank 0, using MPI_Gather. The root process then performs a final bitonic sort on the collected array to merge the sorted subsets into a single sorted array.
+
+- Dynamic memory is freed at the end
+
+# Bubble Sort MPI
+
+- The program requires at least two processes to run. 
+
+- The process with rank 0 populates a vector with a given number of random elements and sends this vector to process 1 using MPI_Send. 
+
+- Process 1 receives the array with MPI_Recv and performs a bubble sort on it. 
+
+- After sorting, the program ensures synchronization with MPI_Barrier. 
+
+# quick sort MPI
+- This is a parallel version of the Quick Sort algorithm using the MPI library.
+
+- Initially, MPI is initialized, and each process identifies its rank within the MPI_COMM_WORLD communicator. The root process, rank 0,  allocates an array and populates it with random numbers. T
+ 
+- The parallelQuickSort function then partitions this array into equal segments that are distributed to all processes with MPI_Scatter. Each process executes a local quick sort on its segment. 
+ 
+- After sorting locally, the segments are gathered back to the root process using MPI_Gather. 
+ 
+- The root process then performs a final quick sort to merge these sorted segments into a fully sorted array. F
+
+
+
+
+
