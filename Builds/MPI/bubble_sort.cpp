@@ -43,6 +43,7 @@ std::vector<int> populate_random_array(size_t num_elements) {
 }
 
   int main(int argc, char *argv[]) {
+    // Start of Main
     MPI_Init(&argc, &argv);
 
     int world_size;
@@ -62,12 +63,42 @@ std::vector<int> populate_random_array(size_t num_elements) {
     }
 
     if (world_rank == 0) {
+        // Start of Data Init
+        CALI_MARK_BEGIN(data_init);
         std::vector<int> host_array = populate_random_array(number_of_elements);
+        // End of Data Init
+        CALI_MARK_END(data_init);
+        // Start Comm
+        CALI_MARK_BEGIN(comm);
+        // Start of CommLarge 
+        CALI_MARK_BEGIN(comm_large);
         MPI_Send(host_array.data(), number_of_elements, MPI_INT, 1, 0, MPI_COMM_WORLD);
+        // End of CommLarge
+        CALI_MARK_END(comm_large);
+        // End of Comm
+        CALI_MARK_END(comm);
     } else if (world_rank == 1) {
         std::vector<int> device_array(number_of_elements);
+        // Start of Comm
+        CALI_MARK_BEGIN(comm);
+        // Start of CommSmall
+        CALI_MARK_BEGIN(comm_small);
         MPI_Recv(device_array.data(), number_of_elements, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        // End of Comm Small
+        CALI_MARK_END(comm_small);
+        // End of Comm
+        CALI_MARK_END(comm);
+
+        // Start of Comp
+        CALI_MARK_BEGIN(comp);
+        // Start of Comp Large
+        CALI_MARK_BEGIN(comp_large);
         bubble_sort(device_array);
+        // End of CompLarge
+        CALI_MARK_END(comp_large);
+        // End of Comp
+        CALI_MARK_END(comp);
+
         array_print(device_array);
 
         if (correctness_check(device_array)) {
@@ -76,8 +107,34 @@ std::vector<int> populate_random_array(size_t num_elements) {
             std::cout << "The array is not correctly sorted." << std::endl;
         }
     }
-
+    // Start of Comm
+    CALI_MARK_BEGIN(comm);
     MPI_Barrier(MPI_COMM_WORLD);
+    // End of Comm
+    CALI_MARK_END(comm);
     MPI_Finalize();
+
+    adiak::init(NULL);
+    adiak::user();
+    adiak::launchdate();                                         // launch date of the job
+    adiak::libraries();                                          // Libraries used
+    adiak::cmdline();                                            // Command line used to launch the job
+    adiak::clustername();                                        // Name of the cluster
+    adiak::value("Algorithm", "Bubble_Sort");                   // The name of the algorithm you are using (e.g., "MergeSort", "BitonicSort")
+    adiak::value("ProgrammingModel", "MPI");                     // e.g., "MPI", "CUDA", "MPIwithCUDA"
+    adiak::value("Datatype", "Int");                          // The datatype of input elements (e.g., double, int, float)
+    adiak::value("SizeOfDatatype", sizeof(int));              // sizeof(datatype) of input elements in bytes (e.g., 1, 2, 4)
+    adiak::value("InputSize", number_of_elements);                        // The number of elements in input dataset (1000)
+    adiak::value("InputType", "Random");                        // For sorting, this would be "Sorted", "ReverseSorted", "Random", "1%perturbed"
+    adiak::value("num_procs", world_size);                        // The number of processors (MPI ranks)
+    adiak::value("group_num", "11");                     // The number of your group (integer, e.g., 1, 10)
+    adiak::value("implementation_source", "Online, AI") // Where you got the source code of your algorithm; choices: ("Online", "AI", "Handwritten").
+
+    // Flush Caliper output before finalizing MPI
+    // End of Main
+    CALI_MARK_END(main_region);
+    mgr.stop();
+    mgr.flush();
+
     return 0;
 }

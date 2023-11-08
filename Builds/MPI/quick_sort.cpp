@@ -2,69 +2,66 @@
 #include <stdlib.h>
 #include <mpi.h>
 #include <iostream>
-void merge(int* arr, int* temp, int low, int mid, int high) {
-    int i = low;
-    int j = mid + 1;
-    int k = low;
 
-    while (i <= mid && j <= high) {
-        if (arr[i] <= arr[j]) {
-            temp[k++] = arr[i++];
-        } else {
-            temp[k++] = arr[j++];
+void swap(int* a, int* b) {
+    int temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+int partition(int* arr, int low, int high) {
+    int pivot = arr[high];
+    int i = low - 1;
+
+    for (int j = low; j <= high - 1; j++) {
+        if (arr[j] < pivot) {
+            i++;
+            swap(&arr[i], &arr[j]);
         }
     }
-
-    while (i <= mid) {
-        temp[k++] = arr[i++];
-    }
-
-    while (j <= high) {
-        temp[k++] = arr[j++];
-    }
-
-    for (i = low; i <= high; i++) {
-        arr[i] = temp[i];
-    }
+    swap(&arr[i + 1], &arr[high]);
+    return (i + 1);
 }
 
-void mergeSort(int* arr, int* temp, int low, int high) {
+void quickSort(int* arr, int low, int high) {
     if (low < high) {
-        int mid = (low + high) / 2;
-        mergeSort(arr, temp, low, mid);
-        mergeSort(arr, temp, mid + 1, high);
-        merge(arr, temp, low, mid, high);
+        int pivot = partition(arr, low, high);
+        quickSort(arr, low, pivot - 1);
+        quickSort(arr, pivot + 1, high);
     }
 }
 
-void parallelMergeSort(int* global_arr, int* temp, int n) {
+void parallelQuickSort(int* arr, int low, int high) {
     int rank, size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
+    printf("%d\n", size);
+    int local_n = (high - low + 1) / size;
+    int local_low = low + rank * local_n;
+    int local_high = local_low + local_n - 1;
 
-    int local_n = n / size;
-    int *local_arr = (int*)malloc(local_n * sizeof(int));
+    int* local_arr = (int*)malloc(local_n * sizeof(int));
 
     // Scatter the data to all processes
     // Start of Comm
     CALI_MARK_BEGIN(comm);
     // Start of CommLarge
     CALI_MARK_BEGIN(comm_large);
-    MPI_Scatter(global_arr, local_n, MPI_INT, local_arr, local_n, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Scatter(arr, local_n, MPI_INT, local_arr, local_n, MPI_INT, 0, MPI_COMM_WORLD);
     // End of CommLarge
     CALI_MARK_END(comm_large);
     // End of Comm
     CALI_MARK_END(comm);
-    // Local merge sort
-    int *local_temp = (int*)malloc(local_n * sizeof(int));
+
+    // Local quicksort
     // Start of Comp
     CALI_MARK_BEGIN(comp);
     // Start of CompSmall
     CALI_MARK_BEGIN(comp_small);
-    mergeSort(local_arr, local_temp, 0, local_n - 1);
-    // End of CommSmall
+    quickSort(local_arr, 0, local_n - 1);
+    // End of CompSmall
     CALI_MARK_END(comp_small);
-    // End of Comm
+    // End of Comp
     CALI_MARK_END(comp);
 
     // Gather the sorted data to the root process
@@ -72,64 +69,51 @@ void parallelMergeSort(int* global_arr, int* temp, int n) {
     CALI_MARK_BEGIN(comm);
     // Start of CommLarge
     CALI_MARK_BEGIN(comm_large);
-    MPI_Gather(local_arr, local_n, MPI_INT, global_arr, local_n, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Gather(local_arr, local_n, MPI_INT, arr, local_n, MPI_INT, 0, MPI_COMM_WORLD);
     // End of CommLarge
     CALI_MARK_END(comm_large);
     // End of Comm
     CALI_MARK_END(comm);
 
-    // Free local arrays
-    free(local_arr);
-    free(local_temp);
-
-    // Perform merging on the root process
+    // Perform final merge on the root process
     if (rank == 0) {
-        // You need to merge the sorted blocks two at a time
-        // Start of Comp 
+        // Start of Comp
         CALI_MARK_BEGIN(comp);
-        // Start of CompLarge 
+        // Start of CompLarge
         CALI_MARK_BEGIN(comp_large);
-        for (int i = 1; i < size; i *= 2) {
-            for (int j = 0; j < size - i; j += 2*i) {
-                int low = j * local_n;
-                int mid = (j + i) * local_n - 1;
-                int high = (j + 2 * i) * local_n - 1 < n ? (j + 2 * i) * local_n - 1 : n - 1;
-                merge(global_arr, temp, low, mid, high);
-            }
-        }
+        quickSort(arr, low, high);
         // End of CompLarge
         CALI_MARK_END(comp_large);
         // End of Comp
         CALI_MARK_END(comp);
     }
+
+    free(local_arr);
 }
 
 int main(int argc, char** argv) {
-    // Start of Main
-    CALI_MARK_BEGIN(main_region);
+    // Start of Main 
     MPI_Init(&argc, &argv);
     int rank, size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
-    printf("%d\n", size);
-    int n = std::stoi(argv[1]); // Total number of elements
 
+    int n = std::stoi(argv[1]); // Total number of elements
+    // Start of Data Init
+    CALI_MARK_BEGIN(data_init);
     int* arr = NULL;
-    int* temp = (int*)malloc(n * sizeof(int));
 
     if (rank == 0) {
         // Initialize the array with random values on the root process
-        // Start of Data Init
-        CALI_MARK_BEGIN(data_init);
         arr = (int*)malloc(n * sizeof(int));
         for (int i = 0; i < n; i++) {
             arr[i] = rand() % 100;
         }
-        // End of Data Init
-        CALI_MARK_END(data_init);
     }
+    // End of Data Init
+    CALI_MARK_END(data_init);
 
-    parallelMergeSort(arr, temp, n);
+    parallelQuickSort(arr, 0, n - 1);
 
     if (rank == 0) {
         // Print the sorted array on the root process
@@ -141,7 +125,6 @@ int main(int argc, char** argv) {
         free(arr);
     }
 
-    free(temp);
     MPI_Finalize();
 
     adiak::init(NULL);
@@ -150,7 +133,7 @@ int main(int argc, char** argv) {
     adiak::libraries();                                          // Libraries used
     adiak::cmdline();                                            // Command line used to launch the job
     adiak::clustername();                                        // Name of the cluster
-    adiak::value("Algorithm", "Merge_Sort");                   // The name of the algorithm you are using (e.g., "MergeSort", "BitonicSort")
+    adiak::value("Algorithm", "Quick_Sort");                   // The name of the algorithm you are using (e.g., "MergeSort", "BitonicSort")
     adiak::value("ProgrammingModel", "MPI");                     // e.g., "MPI", "CUDA", "MPIwithCUDA"
     adiak::value("Datatype", "Int");                          // The datatype of input elements (e.g., double, int, float)
     adiak::value("SizeOfDatatype", sizeof(int));              // sizeof(datatype) of input elements in bytes (e.g., 1, 2, 4)
@@ -161,7 +144,7 @@ int main(int argc, char** argv) {
     adiak::value("implementation_source", "Online, AI") // Where you got the source code of your algorithm; choices: ("Online", "AI", "Handwritten").
 
     // Flush Caliper output before finalizing MPI
-    // End of Main
+    // End of main
     CALI_MARK_END(main_region);
     mgr.stop();
     mgr.flush();
