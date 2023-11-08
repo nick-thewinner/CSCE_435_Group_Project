@@ -13,9 +13,10 @@
 #include <cuda.h>
 
 const char *comp = "comp";
+const char *comp_large = "comp_large";
 const char *main_region = "main_region";
-const char *cudaMemcpy1 = "cudaMemcpy1";
-const char *cudaMemcpy2 = "cudaMemcpy2";
+const char *comm = "comm";
+const char *comm_large = "comm_large";
 const char *data_init = "data_init";
 
 int THREADS;
@@ -129,16 +130,25 @@ void quick_sort(float *values)
     cudaMalloc((void **)&d_l, size);
 
     // Memcpy host to device
-    CALI_MARK_BEGIN(cudaMemcpy1);
+    // Start of Comm
+    CALI_MARK_BEGIN(comm);
+    // Start of Comm Large
+    CALI_MARK_BEGIN(comm_large);
 
     cudaMemcpy(d_data, values, size, cudaMemcpyHostToDevice);
     cudaMemcpy(d_l, lstack, size, cudaMemcpyHostToDevice);
     cudaMemcpy(d_h, hstack, size, cudaMemcpyHostToDevice);
     
-    CALI_MARK_END(cudaMemcpy1);
+    // End of Comm Large
+    CALI_MARK_END(comm_large);
+    // End of Comm
+    CALI_MARK_END(comm);
 
     // Launch kernel
+    // Start of Comp
     CALI_MARK_BEGIN(comp);
+    // Start of Comp Large
+    CALI_MARK_BEGIN(comp_large);
     int n_i = 1; 
     dim3 blocks(BLOCKS, 1);
     dim3 threads(THREADS, 1);
@@ -149,13 +159,21 @@ void quick_sort(float *values)
         cudaMemcpyFromSymbol(&answer, d_size, sizeof(int), 0, cudaMemcpyDeviceToHost); 
         n_i = answer;
     }
-    
+    // End of Comp Large
+    CALI_MARK_END(comp_large);
+    // End of Comp
     CALI_MARK_END(comp);
 
     // Memcpy device to host
-    CALI_MARK_BEGIN(cudaMemcpy2);
+    // Start of Comm
+    CALI_MARK_BEGIN(comm);
+    // Start of Comm Large
+    CALI_MARK_BEGIN(comm_large);
     cudaMemcpy(values, d_data, size, cudaMemcpyDeviceToHost);
-    CALI_MARK_END(cudaMemcpy2);
+    // End of Comm Large
+    CALI_MARK_END(comm_large);
+    // End of Comm 
+    CALI_MARK_END(comm);
 
     cudaFree(d_data);
     
@@ -163,6 +181,7 @@ void quick_sort(float *values)
  
 int main(int argc, char *argv[])
 {
+    // Start of Main
     CALI_MARK_BEGIN(main_region);
 
     THREADS = atoi(argv[1]);
@@ -179,10 +198,12 @@ int main(int argc, char *argv[])
 
     clock_t start, stop;
 
+    // Start of Data Init
     CALI_MARK_BEGIN(data_init);
     float *random_values = (float *)malloc(NUM_VALS * sizeof(float));
 
     array_fill(random_values, NUM_VALS);
+    // End of Data Init
     CALI_MARK_END(data_init);
 
     start = clock();
@@ -191,13 +212,7 @@ int main(int argc, char *argv[])
 
     print_elapsed(start, stop);
 
-    // Store results in these variables.
-    float comp_time;
-    float cudaMemcpy1_time;
-    float cudaMemcpy2_time;
-    float main_time;
-    float data_init_time;
-
+    // End of Main
     CALI_MARK_END(main_region);
 
     array_print(random_values, NUM_VALS);
