@@ -24,7 +24,10 @@ Comparing various sorting algorithms
 - Bubble Sort (CUDA)
 - Bubble Sort (MPI)
 
-We will use inputs of varying sizes and compare amongst each sort on multiple GPUs and on a CPU.
+## inputs
+We will do inputs that encompass strong scaling and weak scaling
+
+It will also have a reverse order input
 
 ## psuedo code
 
