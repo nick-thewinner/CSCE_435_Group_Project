@@ -30,7 +30,7 @@ We will do inputs that encompass strong scaling and weak scaling
 It will also have a reverse order input
 
 ## psuedo code
-** MPI Merge Sort **
+**MPI Merge Sort**
 ```
 MPI_Init()
 MPI_Comm_size(MPI_COMM_WORLD, num_processes)
@@ -70,7 +70,7 @@ if my_rank == 0
 
 MPI_Finalize()
 ```
-** MPI Bitonic Sort **
+**MPI Bitonic Sort**
 ```
 MPI_Init()
 MPI_Comm_size(MPI_COMM_WORLD, num_processes)
@@ -120,7 +120,7 @@ if my_rank == 0
 
 MPI_Finalize()
 ```
-** MPI Quick Sort **
+**MPI Quick Sort**
 ```
 // Parallel Quick Sort using MPI (Pseudocode)
 
@@ -198,7 +198,7 @@ function main:
 // Usage:
 Call the main program to perform parallel quicksort using MPI
 ```
-** MPI Bubble Sort **
+**MPI Bubble Sort**
 ```
 MPI_Init()
 MPI_Comm_size(MPI_COMM_WORLD, num_processes)
@@ -236,7 +236,7 @@ if my_rank == 0
 
 MPI_Finalize()
 ```
-** CUDA Merge Sort **
+**CUDA Merge Sort**
 ```
 # Define constants and parameters
 block_size = 256  # Choose an appropriate block size for your GPU
@@ -286,7 +286,7 @@ cudaMemcpy(output_array, arr_gpu, n * sizeof(int), cudaMemcpyDeviceToHost)
 # Free GPU memory
 cudaFree(arr_gpu)
 ```
-** CUDA Bitonic Sort **
+**CUDA Bitonic Sort**
 ```
 # Define constants and parameters
 block_size = 256  # Choose an appropriate block size for your GPU
@@ -320,7 +320,7 @@ cudaMemcpy(output_array, arr_gpu, n * sizeof(int), cudaMemcpyDeviceToHost)
 # Free GPU memory
 cudaFree(arr_gpu)
 ```
-** CUDA Quick Sort **
+**CUDA Quick Sort**
 ```
 # Define constants and parameters
 block_size = 256  # Choose an appropriate block size for your GPU
@@ -351,7 +351,7 @@ cudaMemcpy(output_array, arr_gpu, n * sizeof(int), cudaMemcpyDeviceToHost)
 # Free GPU memory
 cudaFree(arr_gpu)
 ```
-** CUDA Bubble Sort **
+**CUDA Bubble Sort**
 ```
 # Define constants and parameters
 block_size = 256  # Choose an appropriate block size for your GPU
