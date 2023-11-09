@@ -30,63 +30,368 @@ We will do inputs that encompass strong scaling and weak scaling
 It will also have a reverse order input
 
 ## psuedo code
+** MPI Merge Sort **
+```
+MPI_Init()
+MPI_Comm_size(MPI_COMM_WORLD, num_processes)
+MPI_Comm_rank(MPI_COMM_WORLD, my_rank)
 
-function mergeSort(array, l, r, m) {
-	n1 = m - l + 1
-	n2 = r - m
-	Left[n1+1]; // create left sorted array of size n1
-	Right[n2+1]; // create right sorted array of size n2
-	For i in range(n1):
-		Left[i] = array[l+i-1]
-	For j in range(n2):
-		Right[j] = array[m+j]
-	Left[n1+1] = inf
-	Right[n2+1] = inf
-	I = j = 1
-	For k in range(l, r):
-		If (Left[i] <= Right[i])
-			Array[k] = Left[i]
-			i+=1
-		Else
-			Array[k] = Right[j]
-			j+=1
+function merge(arr, left, mid, right)
+    # Merge two sorted arrays
 
-function BitonicSort(arr,direction):
-   	 n = length of array
-   	 if n > 1 then
-        		BitonicSort(arr[1:n/2],”ascending”)
-		BitonicSort(arr[n/2 + 1:n],”descending”)
-		Merge(arr, direction)
-	end
-return
+function parallel_merge_sort(arr, left, right)
+    if left < right
+        mid = (left + right) / 2
+        subarray_size = (mid - left + 1) / num_processes
+        my_left = my_rank * subarray_size
+        my_right = my_left + subarray_size
+        my_left_subarray = arr[left + my_left : left + my_right]
 
-function Merge(arr, direction):
-   	 n = length of array
-   	if n > 1 then
-        		For i = 1,2……n/2 do
-			If arr[i] > arr[i+n/2]
-				Swap places
-			End
-		End
-		Merge(arr[1 : n/2], direction)
-Merge(arr[n/2+1 : n], direction)
-	end
-return
+        my_left_subarray = merge_sort(my_left_subarray)
+        sorted_subarrays = MPI_Gather(my_left_subarray, root=0)
 
-function quicksort(array) {
-	if (array.length > 1) 
-		choose a pivot.
-		while (there are items left in array) 
-			if (item < pivot)
-				Put item into subarray1;
-			else	
-				Put item into subarray2;
-		end
-		quicksort(subarray1);
-		quicksort(subarray2);
-	end
-return
+        if my_rank == 0
+            result = merge(sorted_subarrays, 0, num_processes - 1)
+            return result
+        else
+            return None
 
+if my_rank == 0
+    arr = generate_random_array()
+else
+    arr = None
+
+arr = MPI_Scatter(arr, root=0)
+sorted_arr = parallel_merge_sort(arr, 0, len(arr) - 1)
+
+if my_rank == 0
+    sorted_arr = MPI_Gather(sorted_arr, root=0)
+    print("Sorted Array:", sorted_arr)
+
+MPI_Finalize()
+```
+** MPI Bitonic Sort **
+```
+MPI_Init()
+MPI_Comm_size(MPI_COMM_WORLD, num_processes)
+MPI_Comm_rank(MPI_COMM_WORLD, my_rank)
+
+function compare_and_swap(arr, i, j, direction)
+    # Compare and swap two elements in the bitonic sequence
+
+function bitonic_merge(arr, left, right, direction)
+    if right > 1
+        mid = right / 2
+
+        # Perform bitonic merge recursively
+        bitonic_merge(arr, left, mid, ascending)
+        bitonic_merge(arr, left + mid, mid, descending)
+
+        # Merge two bitonic sequences
+        compare_and_swap(arr, left, left + mid, direction)
+        bitonic_merge(arr, left, right, direction)
+
+function parallel_bitonic_sort(arr, left, right, direction)
+    if right > 1
+        mid = right / 2
+
+        # Sort the first half in ascending order
+        parallel_bitonic_sort(arr, left, mid, ascending)
+        
+        # Sort the second half in descending order
+        parallel_bitonic_sort(arr, left + mid, mid, descending)
+
+        # Perform bitonic merge
+        bitonic_merge(arr, left, right, direction)
+
+if my_rank == 0
+    arr = generate_random_array()
+else
+    arr = None
+
+arr = MPI_Scatter(arr, root=0)
+parallel_bitonic_sort(arr, 0, len(arr), ascending)
+
+# Gather the sorted subarrays to get the final sorted array
+sorted_arr = MPI_Gather(arr, root=0)
+
+if my_rank == 0
+    print("Sorted Array:", sorted_arr)
+
+MPI_Finalize()
+```
+** MPI Quick Sort **
+```
+// Parallel Quick Sort using MPI (Pseudocode)
+
+// Function to partition an array and return the pivot index
+function partition(inputArray, low, high):
+    pivot = inputArray[high]  // Choose the pivot element (in this case, the last element)
+    i = low - 1              // Initialize an index for the smaller element
+
+    for j from low to high - 1:
+        if inputArray[j] <= pivot:
+            Swap inputArray[i+1] and inputArray[j]
+            Increment i
+
+    Swap inputArray[i+1] and inputArray[high]  // Place the pivot element in its correct position
+    return i + 1  // Return the pivot index
+
+// Parallel Quick Sort function
+function parallelQuickSort(inputArray, low, high):
+    if low < high:
+        pivotIndex = partition(inputArray, low, high)
+
+        // Create communicator for splitting processes
+        comm = MPI_COMM_WORLD
+
+        // Calculate the number of processes in each subarray
+        processesInLeftSubarray = pivotIndex - low + 1
+        processesInRightSubarray = high - pivotIndex
+
+        // Determine the rank of the process in the current communicator
+        MPI_Comm_rank(comm, rank)
+        MPI_Comm_size(comm, size)
+
+        // Determine the communicator for the left and right subarrays
+        if rank < processesInLeftSubarray:
+            Split communicator into left_comm
+        else:
+            Split communicator into right_comm
+
+        // Determine the low and high indices for the left and right subarrays
+        if rank < processesInLeftSubarray:
+            leftLow = low
+            leftHigh = pivotIndex - 1
+        else:
+            rightLow = pivotIndex + 1
+            rightHigh = high
+
+        // Recursively sort the left and right subarrays
+        if rank < processesInLeftSubarray:
+            parallelQuickSort(inputArray, leftLow, leftHigh)
+        else:
+            parallelQuickSort(inputArray, rightLow, rightHigh)
+
+// Main program
+function main:
+    Initialize MPI
+    Get rank and size of the MPI communicator
+
+    if rank == 0:
+        Initialize inputArray with unsorted values
+
+    // Scatter inputArray to all processes
+    Scatter inputArray to all processes in MPI_COMM_WORLD
+
+    // Call parallelQuickSort for each process
+    parallelQuickSort(inputArray, 0, length(inputArray) - 1)
+
+    // Gather sorted subarrays from all processes to reconstruct the sorted inputArray
+    Gather sorted subarrays from all processes in MPI_COMM_WORLD to inputArray at rank 0
+
+    if rank == 0:
+        // The sorted inputArray is now available in inputArray[0]
+
+    Finalize MPI
+
+// Usage:
+Call the main program to perform parallel quicksort using MPI
+```
+** MPI Bubble Sort **
+```
+MPI_Init()
+MPI_Comm_size(MPI_COMM_WORLD, num_processes)
+MPI_Comm_rank(MPI_COMM_WORLD, my_rank)
+
+function parallel_bubble_sort(arr)
+    for i from 0 to len(arr) - 1
+        if i % 2 == 0
+            # Even pass: Compare and swap adjacent elements
+            for j from 0 to len(arr) - 2 step 2
+                if arr[j] > arr[j + 1]
+                    swap(arr[j], arr[j + 1])
+        else
+            # Odd pass: Compare and swap adjacent elements
+            for j from 1 to len(arr) - 2 step 2
+                if arr[j] > arr[j + 1]
+                    swap(arr[j], arr[j + 1])
+
+if my_rank == 0
+    arr = generate_random_array()
+else
+    arr = None
+
+# Scatter the array to all processes
+arr = MPI_Scatter(arr, root=0)
+
+# Perform parallel bubble sort
+parallel_bubble_sort(arr)
+
+# Gather the sorted subarrays to get the final sorted array
+sorted_arr = MPI_Gather(arr, root=0)
+
+if my_rank == 0
+    print("Sorted Array:", sorted_arr)
+
+MPI_Finalize()
+```
+** CUDA Merge Sort **
+```
+# Define constants and parameters
+block_size = 256  # Choose an appropriate block size for your GPU
+n = length of input array
+num_blocks = n / block_size
+
+# Allocate memory on the GPU
+cudaMalloc(arr_gpu, n * sizeof(int))
+
+# Transfer data from CPU to GPU
+cudaMemcpy(arr_gpu, input_array, n * sizeof(int), cudaMemcpyHostToDevice)
+
+# Define the CUDA kernel for merge sort
+__global__ void merge_sort_kernel(int* arr, int left, int right) {
+    // Get thread ID and block ID
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+    
+    // Implement merge sort algorithm here
+    if (left < right) {
+        int mid = (left + right) / 2;
+        
+        // Sort the left half
+        merge_sort_kernel(arr, left, mid);
+        
+        // Sort the right half
+        merge_sort_kernel(arr, mid + 1, right);
+        
+        // Merge the sorted halves
+        merge(arr, left, mid, right);
+    }
+}
+
+# Define the merge function for merging two sorted arrays
+__device__ void merge(int* arr, int left, int mid, int right) {
+    // Implement merge algorithm here
+}
+
+# Launch the merge sort kernel
+merge_sort_kernel<<<num_blocks, block_size>>>(arr_gpu, 0, n - 1)
+
+# Wait for kernel to finish
+cudaDeviceSynchronize()
+
+# Transfer sorted data back from GPU to CPU
+cudaMemcpy(output_array, arr_gpu, n * sizeof(int), cudaMemcpyDeviceToHost)
+
+# Free GPU memory
+cudaFree(arr_gpu)
+```
+** CUDA Bitonic Sort **
+```
+# Define constants and parameters
+block_size = 256  # Choose an appropriate block size for your GPU
+n = length of input array
+num_blocks = n / block_size
+
+# Allocate memory on the GPU
+cudaMalloc(arr_gpu, n * sizeof(int))
+
+# Transfer data from CPU to GPU
+cudaMemcpy(arr_gpu, input_array, n * sizeof(int), cudaMemcpyHostToDevice)
+
+# Define the CUDA kernel for bitonic sort
+__global__ void bitonic_sort_kernel(int* arr, int n) {
+    // Get thread ID and block ID
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+    
+    // Implement bitonic sort algorithm here
+    // Ensure proper thread cooperation for parallel sorting
+}
+
+# Launch the bitonic sort kernel
+for i from 2 to n:
+    for j from i / 2 down to 1:
+        bitonic_sort_kernel<<<num_blocks, block_size>>>(arr_gpu, n, j, i)
+        cudaDeviceSynchronize()     
+
+# Transfer sorted data back from GPU to CPU
+cudaMemcpy(output_array, arr_gpu, n * sizeof(int), cudaMemcpyDeviceToHost)
+
+# Free GPU memory
+cudaFree(arr_gpu)
+```
+** CUDA Quick Sort **
+```
+# Define constants and parameters
+block_size = 256  # Choose an appropriate block size for your GPU
+n = length of input array
+num_blocks = n / block_size
+
+# Allocate memory on the GPU
+cudaMalloc(arr_gpu, n * sizeof(int))
+
+# Transfer data from CPU to GPU
+cudaMemcpy(arr_gpu, input_array, n * sizeof(int), cudaMemcpyHostToDevice)
+
+# Define the CUDA kernel for quick sort
+__global__ void quick_sort_kernel(int* arr, int left, int right) {
+    // Get thread ID and block ID
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+    
+    // Implement quick sort algorithm here
+}
+
+# Launch the quick sort kernel
+quick_sort_kernel<<<num_blocks, block_size>>>(arr_gpu, 0, n - 1)
+cudaDeviceSynchronize()
+
+# Transfer sorted data back from GPU to CPU
+cudaMemcpy(output_array, arr_gpu, n * sizeof(int), cudaMemcpyDeviceToHost)
+
+# Free GPU memory
+cudaFree(arr_gpu)
+```
+** CUDA Bubble Sort **
+```
+# Define constants and parameters
+block_size = 256  # Choose an appropriate block size for your GPU
+n = length of input array
+num_blocks = n / block_size
+
+# Allocate memory on the GPU
+cudaMalloc(arr_gpu, n * sizeof(int))
+
+# Transfer data from CPU to GPU
+cudaMemcpy(arr_gpu, input_array, n * sizeof(int), cudaMemcpyHostToDevice)
+
+# Define the CUDA kernel for parallelized bubble sort
+__global__ void bubble_sort_kernel(int* arr, int n) {
+    // Get thread ID and block ID
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+    
+    // Implement parallel bubble sort algorithm here
+    if (tid < n) {
+        for (int i = 0; i < n - tid - 1; i++) {
+            if (arr[i] > arr[i + 1]) {
+                // Swap arr[i] and arr[i + 1]
+                int temp = arr[i];
+                arr[i] = arr[i + 1];
+                arr[i + 1] = temp;
+            }
+        }
+    }
+}
+
+# Launch the bubble sort kernel
+bubble_sort_kernel<<<num_blocks, block_size>>>(arr_gpu, n)
+cudaDeviceSynchronize()
+
+# Transfer sorted data back from GPU to CPU
+cudaMemcpy(output_array, arr_gpu, n * sizeof(int), cudaMemcpyDeviceToHost)
+
+# Free GPU memory
+cudaFree(arr_gpu)
+```
 ## psuedo code
 
 # Bitonic Sort MPI
