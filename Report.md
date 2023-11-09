@@ -125,6 +125,40 @@ return
 - The array is then divided among all processes using MPI_Scatter, and each process performs a local merge sort on its part of the array. After sorting, the local arrays are gathered back using MPI_Gather.
 
 - This recrusive algorithim keeps merging the sorted subarrays to get the final whole sorted array. 
+
+# bitonic sort CUDA
+
+- bitonic sort algorithm for sorting floating-point numbers on Nvidia GPUs. 
+
+- This algorithim initializes an array with random values and uses the GPU's parallel processing capabilities to perform the sort operation. 
+
+- Additionally, the code uses Adiak to collect metadata about the program's execution, such as input size and the number of threads and blocks used. 
+
+# merge sort CUDA
+
+Tbe merge sort code includes functions for generating an array of random floating-point numbers, sorting them using a merge sort algorithm parallelized with CUDA
+
+- The process begins by defining constants and variables for computation, communication, data initialization, and the CUDA grid configuration (threads, blocks, and number of values). The merge kernel function performs the merging step of the merge sort algorithm on the GPU. The merge_sort function manages memory allocation on the GPU, data transfer between the host and device, and the iterative merging process. T
+
+# Bubble sort CUDA
+
+- This sorting algorithim consists of two CUDA kernel functions, odd_swaps and even_swaps, and a host function bubble_sort.
+
+Kernel Functions:
+- odd_swaps performs swapping on odd-indexed elements if they are larger than their immediate successors.
+- even_swaps performs swapping on even-indexed elements under the same condition.
+- These kernels are launched in parallel across multiple threads, where each thread operates on different indices of the array. By splitting the work into odd and even indices, the algorithm takes advantage of parallelism to speed up the traditional bubble sort.
+
+Bubble Sort Function:
+- Allocates memory on the GPU and copies the input array from the host to this memory.
+- Sequentially calls the even_swaps and odd_swaps kernels a number of times proportional to the number of values to be sorted.
+- Ensures all device operations are complete with cudaDeviceSynchronize.
+- Copies the sorted array back to the host memory.
+
+# quick sort CUDA
+- The core of this code is the partition kernel, which is responsible for partitioning the array segments. Each thread takes a segment of the array, determined by stack_l and stack_h arrays, and partitions it around a pivot element, swapping elements to ensure all values less than the pivot are on the left, and all values greater are on the right. Following the partitioning, each thread dynamically updates the stack with indices of the new segments to be sorted, utilizing atomic operations to avoid conflicts when multiple threads try to update the stack size simultaneously.
+
+- The normal function quick_sort manages the overall sorting process. It allocates memory on the GPU for the data and the stack arrays and copies the initial data from the host to the GPU. It uses a loop to repeatedly invoke the partition kernel until the array is fully sorted, with the sorted segments growing larger with each iteration. After sorting, it transfers the sorted array back to the host memory and frees the GPU memory. 
  
 
 
