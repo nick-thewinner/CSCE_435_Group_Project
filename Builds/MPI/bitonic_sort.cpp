@@ -13,9 +13,42 @@ const char* comm = "comm";
 const char* comm_small = "comm_small";
 const char* comm_large = "comm_large";
 const char* main_region = "main_region";
-const char* cudaMemcpy1 = "cudaMemcpy1";
-const char* cudaMemcpy2 = "cudaMemcpy2";
 const char* data_init = "data_init";
+
+int random_int()
+{
+  return (int)rand()/(int)RAND_MAX;
+}
+
+void array_fill(int *arr, int length)
+{
+  srand(time(NULL));
+  int i;
+  for (i = 0; i < length; ++i) {
+    arr[i] = random_int();
+  }
+}
+
+void array_print(int *arr, int length) 
+{
+  int i;
+  for (i = 0; i < length; ++i) {
+    printf("%1.3f ",  arr[i]);
+  }
+  printf("\n");
+}
+
+bool correctness_check(int *arr, int length) 
+{
+    int i;
+    for (i = 1; i < length; i++)  
+    {
+        if (arr[i - 1] > arr[i]) {
+            return false;
+        }
+    }
+    return true;
+}
 
 void compareSwap(int *a, int *b, int dir)
 {
@@ -60,12 +93,16 @@ int main(int argc, char **argv)
     int rank, size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
+    // Create caliper ConfigManager object
+    cali::ConfigManager mgr;
+    mgr.start();
 
     int n = std::stoi(argv[1]); // Total number of elements
     int local_n = n / size;     // Number of elements per process
 
     // Start of Data Init
     CALI_MARK_BEGIN(data_init);
+
     int *arr = (int *)malloc(local_n * sizeof(int));
     int *recvbuf = NULL;
     if (rank == 0)
@@ -73,11 +110,7 @@ int main(int argc, char **argv)
         recvbuf = (int *)malloc(n * sizeof(int)); // Note that it's 'n', not 'local_n' because root will gather all data.
     }
 
-    // Initialize local array with random values
-    for (int i = 0; i < local_n; i++)
-    {
-        arr[i] = rand() % 100;
-    }
+    array_fill(arr, n);
     // End of Data Init
     CALI_MARK_END(data_init);
 
@@ -90,7 +123,7 @@ int main(int argc, char **argv)
     // End of CompSmall
     CALI_MARK_END(comp_small);
     // End of Comp 
-    CAL_MARK_END(comp);
+    CALI_MARK_END(comp);
 
     // Gather all local arrays to the root process
     // Start of Comm
@@ -116,19 +149,19 @@ int main(int argc, char **argv)
         // End of Comp
         CALI_MARK_END(comp);
 
-        // // Print the sorted array - need to comment out this when running 
-        // printf("Sorted Array: ");
-        // for (int i = 0; i < n; i++)
-        // {
-        //     printf("%d ", recvbuf[i]);
-        // }
-        // printf("\n");
+        array_print(recvbuf, n);
+        if (correctness_check(recvbuf,n)) {
+            std::cout << "The array is correctly sorted." << std::endl;
+        } else {
+            std::cout << "The array is not correctly sorted." << std::endl;
+        }
     }
 
-    free(arr);
+    //free(arr);
     if (rank == 0)
     {
         free(recvbuf);
+        free(arr);
     }
 
     MPI_Finalize();
@@ -149,7 +182,7 @@ int main(int argc, char **argv)
     adiak::value("InputType", "Random");                        // For sorting, this would be "Sorted", "ReverseSorted", "Random", "1%perturbed"
     adiak::value("num_procs", size);                        // The number of processors (MPI ranks)
     adiak::value("group_num", "11");                     // The number of your group (integer, e.g., 1, 10)
-    adiak::value("implementation_source", "Online, AI") // Where you got the source code of your algorithm; choices: ("Online", "AI", "Handwritten").
+    adiak::value("implementation_source", "Online, AI"); // Where you got the source code of your algorithm; choices: ("Online", "AI", "Handwritten").
 
     // Flush Caliper output before finalizing MPI
     mgr.stop();

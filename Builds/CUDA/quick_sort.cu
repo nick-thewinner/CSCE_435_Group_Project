@@ -29,22 +29,22 @@ void print_elapsed(clock_t start, clock_t stop)
     printf("Elapsed time: %.3fs\n", elapsed);
 }
 
-float random_float()
+int random_int()
 {
-    return (float)rand() / (float)RAND_MAX;
+    return (int)rand() / (int)RAND_MAX;
 }
 
-void array_fill(float *arr, int length)
+void array_fill(int *arr, int length)
 {
     srand(time(NULL));
     int i;
     for (i = 0; i < length; ++i)
     {
-        arr[i] = random_float();
+        arr[i] = random_int();
     }
 }
 
-void array_print(float *arr, int length)
+void array_print(int *arr, int length)
 {
     int i;
     for (i = 0; i < length; ++i)
@@ -54,7 +54,7 @@ void array_print(float *arr, int length)
     printf("\n");
 }
 
-bool correctness_check(float *arr, int length)
+bool correctness_check(int *arr, int length)
 {
     int i;
     for (i = 1; i < length; i++)
@@ -70,7 +70,7 @@ bool correctness_check(float *arr, int length)
 __device__ int d_size;
 
 
-__global__ void partition (float *vals, int *stack_l, int *stack_h, int n)
+__global__ void partition (int *vals, int *stack_l, int *stack_h, int n)
 {
     int z = blockIdx.x*blockDim.x+threadIdx.x;
     d_size = 0;
@@ -79,9 +79,9 @@ __global__ void partition (float *vals, int *stack_l, int *stack_h, int n)
       {
         int h = stack_h[z];
         int l = stack_l[z];
-        float x = vals[h];
+        int x = vals[h];
         int i = (l - 1);
-        float temp;
+        int temp;
         
         for (int j = l; j <= h- 1; j++)
           {
@@ -112,9 +112,9 @@ __global__ void partition (float *vals, int *stack_l, int *stack_h, int n)
       }
 }
 
-void quick_sort(float *values)
+void quick_sort(int *values)
 {
-    float *d_data;
+    int *d_data;
     int* d_l;
     int *d_h;
     int lstack[ NUM_VALS ], hstack[ NUM_VALS ];
@@ -123,7 +123,7 @@ void quick_sort(float *values)
     hstack[ top ] = NUM_VALS - 1;
 
  
-    size_t size = NUM_VALS * sizeof(float);
+    size_t size = NUM_VALS * sizeof(int);
    
     cudaMalloc((void **)&d_data, size);
     cudaMalloc((void **)&d_h, size);
@@ -200,7 +200,7 @@ int main(int argc, char *argv[])
 
     // Start of Data Init
     CALI_MARK_BEGIN(data_init);
-    float *random_values = (float *)malloc(NUM_VALS * sizeof(float));
+    int *random_values = (int *)malloc(NUM_VALS * sizeof(int));
 
     array_fill(random_values, NUM_VALS);
     // End of Data Init
@@ -215,9 +215,13 @@ int main(int argc, char *argv[])
     // End of Main
     CALI_MARK_END(main_region);
 
-    array_print(random_values, NUM_VALS);
+    //array_print(random_values, NUM_VALS);
 
-    printf("Correct: %s", correctness_check(random_values, NUM_VALS) ? "true" : "false");
+    if (correctness_check(random_values, NUM_VALS)) {
+            std::cout << "The array is correctly sorted." << std::endl;
+        } else {
+            std::cout << "The array is not correctly sorted." << std::endl;
+        }
 
     adiak::init(NULL);
     adiak::user();
@@ -227,8 +231,8 @@ int main(int argc, char *argv[])
     adiak::clustername();
     adiak::value("Algorithm", "Quick_Sort");
     adiak::value("Programming_Model", "CUDA");
-    adiak::value("Datatype", "float");
-    adiak::value("SizeOfDatatype", sizeof(float));
+    adiak::value("Datatype", "int");
+    adiak::value("SizeOfDatatype", sizeof(int));
     adiak::value("InputSize", NUM_VALS);
     adiak::value("InputType", "Random");
     adiak::value("num_threads", THREADS);

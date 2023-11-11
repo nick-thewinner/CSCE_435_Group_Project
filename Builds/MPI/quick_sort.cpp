@@ -6,6 +6,49 @@
 #include <caliper/cali-manager.h>
 #include <adiak.hpp>
 
+const char* comp = "comp";
+const char* comp_large = "comp_large";
+const char* comp_small = "comp_small";
+const char* main_region = "main_region";
+const char* comm = "comm";
+const char* comm_large = "comm_large";
+const char* data_init = "data_init";
+
+int random_int()
+{
+  return (int)rand()/(int)RAND_MAX;
+}
+
+void array_fill(int *arr, int length)
+{
+  srand(time(NULL));
+  int i;
+  for (i = 0; i < length; ++i) {
+    arr[i] = random_int();
+  }
+}
+
+void array_print(int *arr, int length) 
+{
+  int i;
+  for (i = 0; i < length; ++i) {
+    printf("%1.3f ",  arr[i]);
+  }
+  printf("\n");
+}
+
+bool correctness_check(int *arr, int length) 
+{
+    int i;
+    for (i = 1; i < length; i++)  
+    {
+        if (arr[i - 1] > arr[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
 void swap(int* a, int* b) {
     int temp = *a;
     *a = *b;
@@ -38,7 +81,7 @@ void parallelQuickSort(int* arr, int low, int high) {
     int rank, size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
-    printf("%d\n", size);
+    //printf("%d\n", size);
     int local_n = (high - low + 1) / size;
     int local_low = low + rank * local_n;
     int local_high = local_low + local_n - 1;
@@ -102,6 +145,10 @@ int main(int argc, char** argv) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
+    // Create caliper ConfigManager object
+    cali::ConfigManager mgr;
+    mgr.start();
+
     int n = std::stoi(argv[1]); // Total number of elements
     int* arr = NULL;
 
@@ -110,9 +157,7 @@ int main(int argc, char** argv) {
         CALI_MARK_BEGIN(data_init);
         // Initialize the array with random values on the root process
         arr = (int*)malloc(n * sizeof(int));
-        for (int i = 0; i < n; i++) {
-            arr[i] = rand() % 100;
-        }
+        array_fill(arr, n);
         // End of Data Init
         CALI_MARK_END(data_init);
     }
@@ -121,11 +166,12 @@ int main(int argc, char** argv) {
 
     if (rank == 0) {
         // Print the sorted array on the root process
-        printf("Sorted Array: ");
-        for (int i = 0; i < n; i++) {
-            printf("%d ", arr[i]);
+        //array_print(arr,n);
+        if (correctness_check(arr,n)) {
+            std::cout << "The array is correctly sorted." << std::endl;
+        } else {
+            std::cout << "The array is not correctly sorted." << std::endl;
         }
-        printf("\n");
         free(arr);
     }
 
@@ -148,7 +194,7 @@ int main(int argc, char** argv) {
     adiak::value("InputType", "Random");                        // For sorting, this would be "Sorted", "ReverseSorted", "Random", "1%perturbed"
     adiak::value("num_procs", size);                        // The number of processors (MPI ranks)
     adiak::value("group_num", "11");                     // The number of your group (integer, e.g., 1, 10)
-    adiak::value("implementation_source", "Online, AI") // Where you got the source code of your algorithm; choices: ("Online", "AI", "Handwritten").
+    adiak::value("implementation_source", "Online, AI"); // Where you got the source code of your algorithm; choices: ("Online", "AI", "Handwritten").
 
     // Flush Caliper output before finalizing MPI
     

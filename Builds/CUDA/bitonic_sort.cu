@@ -33,21 +33,21 @@ void print_elapsed(clock_t start, clock_t stop)
   printf("Elapsed time: %.3fs\n", elapsed);
 }
 
-float random_float()
+int random_int()
 {
-  return (float)rand()/(float)RAND_MAX;
+  return (int)rand()/(int)RAND_MAX;
 }
 
-void array_fill(float *arr, int length)
+void array_fill(int *arr, int length)
 {
   srand(time(NULL));
   int i;
   for (i = 0; i < length; ++i) {
-    arr[i] = random_float();
+    arr[i] = random_int();
   }
 }
 
-void array_print(float *arr, int length) 
+void array_print(int *arr, int length) 
 {
   int i;
   for (i = 0; i < length; ++i) {
@@ -56,7 +56,7 @@ void array_print(float *arr, int length)
   printf("\n");
 }
 
-bool correctness_check(float *arr, int length) 
+bool correctness_check(int *arr, int length) 
 {
     int i;
     for (i = 1; i < length; i++)  
@@ -68,7 +68,7 @@ bool correctness_check(float *arr, int length)
     return true;
 }
 
-__global__ void bitonic_sort_step(float *dev_values, int j, int k)
+__global__ void bitonic_sort_step(int *dev_values, int j, int k)
 {
   unsigned int i, ixj; /* Sorting partners: i and ixj */
   i = threadIdx.x + blockDim.x * blockIdx.x;
@@ -80,7 +80,7 @@ __global__ void bitonic_sort_step(float *dev_values, int j, int k)
       /* Sort ascending */
       if (dev_values[i]>dev_values[ixj]) {
         /* exchange(i,ixj); */
-        float temp = dev_values[i];
+        int temp = dev_values[i];
         dev_values[i] = dev_values[ixj];
         dev_values[ixj] = temp;
       }
@@ -89,7 +89,7 @@ __global__ void bitonic_sort_step(float *dev_values, int j, int k)
       /* Sort descending */
       if (dev_values[i]<dev_values[ixj]) {
         /* exchange(i,ixj); */
-        float temp = dev_values[i];
+        int temp = dev_values[i];
         dev_values[i] = dev_values[ixj];
         dev_values[ixj] = temp;
       }
@@ -100,10 +100,10 @@ __global__ void bitonic_sort_step(float *dev_values, int j, int k)
 /**
  * Inplace bitonic sort using CUDA.
  */
-void bitonic_sort(float *values)
+void bitonic_sort(int *values)
 {
-  float *dev_values;
-  size_t size = NUM_VALS * sizeof(float);
+  int *dev_values;
+  size_t size = NUM_VALS * sizeof(int);
 
   cudaMalloc((void**) &dev_values, size);
   
@@ -146,7 +146,7 @@ void bitonic_sort(float *values)
   // Start of Comm
   CALI_MARK_BEGIN(comm);
   // Start of Comm Large
-  CALI_MARK_BEIGN(comm_large);
+  CALI_MARK_BEGIN(comm_large);
   cudaMemcpy(values, dev_values, size, cudaMemcpyDeviceToHost);
   // End of Comm Large
   CALI_MARK_END(comm_large);
@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
 
   // Start of Data Init
   CALI_MARK_BEGIN(data_init);
-  float *random_values = (float*) malloc( NUM_VALS * sizeof(float));
+  int *random_values = (int*) malloc( NUM_VALS * sizeof(int));
 
   array_fill(random_values, NUM_VALS);
   // End of Data Init
@@ -193,7 +193,12 @@ int main(int argc, char *argv[])
   // End of Main
   CALI_MARK_END(main_region);
   
-  array_print(random_values, NUM_VALS);
+  //array_print(random_values, NUM_VALS);
+  if (correctness_check(random_values, NUM_VALS)) {
+            std::cout << "The array is correctly sorted." << std::endl;
+        } else {
+            std::cout << "The array is not correctly sorted." << std::endl;
+        }
 
   printf("Correct: %s", correctness_check(random_values, NUM_VALS) ? "true" : "false");
   
@@ -205,8 +210,8 @@ int main(int argc, char *argv[])
   adiak::clustername();
   adiak::value("Algorithm", "Bitonic_Sort");
   adiak::value("Programming_Model", "CUDA");
-  adiak::value("Datatype", "float");
-  adiak::value("SizeOfDatatype", sizeof(float));
+  adiak::value("Datatype", "int");
+  adiak::value("SizeOfDatatype", sizeof(int));
   adiak::value("InputSize", NUM_VALS);
   adiak::value("InputType", "Random");
   adiak::value("num_threads", THREADS);

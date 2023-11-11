@@ -6,7 +6,14 @@
 #include <caliper/cali.h>
 #include <caliper/cali-manager.h>
 #include <adiak.hpp>
-
+const char* comp = "comp";
+const char* comp_large = "comp_large";
+const char* comp_small = "comp_small";
+const char* main_region = "main_region";
+const char* comm = "comm";
+const char* comm_large = "comm_large";
+const char* comm_small = "comm_small";
+const char* data_init = "data_init";
 bool correctness_check(const std::vector<int>& arr) {
     for (size_t i = 1; i < arr.size(); i++) {
         if (arr[i - 1] > arr[i]) {
@@ -23,6 +30,11 @@ void array_print(const std::vector<int>& arr) {
     std::cout << "\n";
 }
 
+int random_int()
+{
+  return (int)rand()/(int)RAND_MAX;
+}
+
 void bubble_sort(std::vector<int>& arr) {
     bool swapped;
     do {
@@ -36,11 +48,11 @@ void bubble_sort(std::vector<int>& arr) {
     } while (swapped);
 }
 
-std::vector<int> populate_random_array(size_t num_elements) {
+std::vector<int> vector_fill(size_t num_elements) {
     std::vector<int> arr(num_elements);
     std::srand(static_cast<unsigned>(std::time(nullptr)));
     for (auto& value : arr) {
-        value = std::rand() % 100 + 1;
+        value = random_int();
     }
     return arr;
 }
@@ -58,7 +70,10 @@ std::vector<int> populate_random_array(size_t num_elements) {
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
     const int number_of_elements = std::stoi(argv[1]);
-    printf("%d\n", world_size);
+    //printf("%d\n", world_size);
+    // Create caliper ConfigManager object
+    cali::ConfigManager mgr;
+    mgr.start();
 
     if (world_size < 2) {
         std::cerr << "World size must be greater than 1 for " << argv[0] << std::endl;
@@ -69,7 +84,7 @@ std::vector<int> populate_random_array(size_t num_elements) {
     if (world_rank == 0) {
         // Start of Data Init
         CALI_MARK_BEGIN(data_init);
-        std::vector<int> host_array = populate_random_array(number_of_elements);
+        std::vector<int> host_array = vector_fill(number_of_elements);
         // End of Data Init
         CALI_MARK_END(data_init);
         // Start Comm
@@ -103,7 +118,7 @@ std::vector<int> populate_random_array(size_t num_elements) {
         // End of Comp
         CALI_MARK_END(comp);
 
-        array_print(device_array);
+        //array_print(device_array);
 
         if (correctness_check(device_array)) {
             std::cout << "The array is correctly sorted." << std::endl;
@@ -135,7 +150,7 @@ std::vector<int> populate_random_array(size_t num_elements) {
     adiak::value("InputType", "Random");                        // For sorting, this would be "Sorted", "ReverseSorted", "Random", "1%perturbed"
     adiak::value("num_procs", world_size);                        // The number of processors (MPI ranks)
     adiak::value("group_num", "11");                     // The number of your group (integer, e.g., 1, 10)
-    adiak::value("implementation_source", "Online, AI") // Where you got the source code of your algorithm; choices: ("Online", "AI", "Handwritten").
+    adiak::value("implementation_source", "Online, AI"); // Where you got the source code of your algorithm; choices: ("Online", "AI", "Handwritten").
 
     // Flush Caliper output before finalizing MPI
     mgr.stop();

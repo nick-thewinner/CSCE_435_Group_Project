@@ -14,7 +14,7 @@
 const char *comm = "comm";
 const char *comm_large = "comm_large";
 const char *comp = "comp";
-const char *comp_large = "comp_large"
+const char *comp_large = "comp_large";
 const char *main_region = "main_region";
 const char *data_init = "data_init";
 
@@ -28,21 +28,21 @@ void print_elapsed(clock_t start, clock_t stop)
     std::cout << "Elapsed time: " << elapsed << "s\n";
 }
 
-float random_float()
+int random_int()
 {
-    return static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+    return static_cast<int>(rand()) / static_cast<int>(RAND_MAX);
 }
 
-void array_fill(float *arr, int length)
+void array_fill(int *arr, int length)
 {
     srand(static_cast<unsigned int>(time(NULL)));
     for (int i = 0; i < length; ++i)
     {
-        arr[i] = random_float();
+        arr[i] = random_int();
     }
 }
 
-void array_print(float *arr, int length)
+void array_print(int *arr, int length)
 {
     for (int i = 0; i < length; ++i)
     {
@@ -51,7 +51,7 @@ void array_print(float *arr, int length)
     std::cout << "\n";
 }
 
-bool correctness_check(float *arr, int length)
+bool correctness_check(int *arr, int length)
 {
     for (int i = 1; i < length; i++)
     {
@@ -63,21 +63,21 @@ bool correctness_check(float *arr, int length)
     return true;
 }
 
-__global__ void odd_swaps(float *random_vals, int n)
+__global__ void odd_swaps(int *random_vals, int n)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if((i % 2 != 0) && (i < n-2) && (random_vals[i] >= random_vals[i+1])){
-        float temp = random_vals[i];
+        int temp = random_vals[i];
         random_vals[i] = random_vals[i+1];
         random_vals[i+1] = temp;
     }
 }
 
-__global__ void even_swaps(float *random_vals, int n)
+__global__ void even_swaps(int *random_vals, int n)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if((i % 2 == 0) && (i < n-1) && (random_vals[i] >= random_vals[i+1])){
-        float temp = random_vals[i];
+        int temp = random_vals[i];
         random_vals[i] = random_vals[i+1];
         random_vals[i+1] = temp;
     }
@@ -85,11 +85,11 @@ __global__ void even_swaps(float *random_vals, int n)
 
 
 
-void bubble_sort(float *values)
+void bubble_sort(int *values)
 {
-    float *d_values;
+    int *d_values;
 
-    size_t size = NUM_VALS * sizeof(float);
+    size_t size = NUM_VALS * sizeof(int);
     cudaMalloc(&d_values, size);
 
     // Start of Comm
@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
 
     // Start of Data Init
     CALI_MARK_BEGIN(data_init);
-    float *random_values = (float *)malloc(NUM_VALS * sizeof(float));
+    int *random_values = (int *)malloc(NUM_VALS * sizeof(int));
 
     array_fill(random_values, NUM_VALS);
     // End of Data Init
@@ -172,9 +172,13 @@ int main(int argc, char *argv[])
     // End of Main
     CALI_MARK_END(main_region);
 
-    array_print(random_values, NUM_VALS);
+    //array_print(random_values, NUM_VALS);
 
-    printf("Correct: %s", correctness_check(random_values, NUM_VALS) ? "true" : "false");
+    if (correctness_check(random_values, NUM_VALS)) {
+            std::cout << "The array is correctly sorted." << std::endl;
+        } else {
+            std::cout << "The array is not correctly sorted." << std::endl;
+        }
 
     adiak::init(NULL);
     adiak::user();
@@ -184,8 +188,8 @@ int main(int argc, char *argv[])
     adiak::clustername();
     adiak::value("Algorithm", "Bubble_Sort");
     adiak::value("Programming_Model", "CUDA");
-    adiak::value("Datatype", "float");
-    adiak::value("SizeOfDatatype", sizeof(float));
+    adiak::value("Datatype", "int");
+    adiak::value("SizeOfDatatype", sizeof(int));
     adiak::value("InputSize", NUM_VALS);
     adiak::value("InputType", "Random");
     adiak::value("num_threads", THREADS);
