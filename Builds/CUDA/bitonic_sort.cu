@@ -14,7 +14,8 @@
 #include <caliper/cali-manager.h>
 #include <adiak.hpp>
 #include <cuda_runtime.h>
-#include <cuda.h> 
+#include <cuda.h>
+#include <random> 
 
 int THREADS;
 int BLOCKS;
@@ -53,9 +54,9 @@ void array_print(int *arr, int length)
 {
   int i;
   for (i = 0; i < length; ++i) {
-    printf("%1.3f ",  arr[i]);
+    std::cout << arr[i] << " ";
   }
-  printf("\n");
+  std::cout << std::endl;
 }
 
 bool correctness_check(int *arr, int length) 
@@ -200,7 +201,7 @@ int main(int argc, char *argv[])
 
   print_elapsed(start, stop);
   
-  //array_print(random_values, NUM_VALS);
+  array_print(random_values, NUM_VALS);
   // Start of correctness check
   CALI_MARK_BEGIN(correct);
   if (correctness_check(random_values, NUM_VALS)) {

@@ -34,9 +34,9 @@ void array_print(int *arr, int length)
 {
   int i;
   for (i = 0; i < length; ++i) {
-    printf("%1.3f ",  arr[i]);
+    std::cout << arr[i] << " ";
   }
-  printf("\n");
+  std::cout << std::endl;
 }
 
 bool correctness_check(int *arr, int length) 
@@ -191,7 +191,7 @@ int main(int argc, char** argv) {
 
     if (rank == 0) {
         // Print the sorted array on the root process
-        //array_print(arr, n);
+        array_print(arr, n);
         // Start of correctness check
         CALI_MARK_BEGIN(correct);
         if (correctness_check(arr,n)) {

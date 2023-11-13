@@ -24,7 +24,7 @@ int random_int()
 
 void array_fill(int *arr, int length)
 {
-  srand(time(NULL));
+  srand(time(0));
   int i;
   for (i = 0; i < length; ++i) {
     arr[i] = random_int();
@@ -35,9 +35,9 @@ void array_print(int *arr, int length)
 {
   int i;
   for (i = 0; i < length; ++i) {
-    printf("%1.3f ",  arr[i]);
+    std::cout << arr[i] << " ";
   }
-  printf("\n");
+  std::cout << std::endl;
 }
 
 bool correctness_check(int *arr, int length) 
@@ -112,7 +112,8 @@ int main(int argc, char **argv)
         recvbuf = (int *)malloc(n * sizeof(int)); // Note that it's 'n', not 'local_n' because root will gather all data.
     }
 
-    array_fill(arr, n);
+    array_fill(arr, local_n);
+    //array_print(arr, local_n);
     // End of Data Init
     CALI_MARK_END(data_init);
 

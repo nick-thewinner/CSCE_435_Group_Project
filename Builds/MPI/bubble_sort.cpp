@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
         // End of Comp
         CALI_MARK_END(comp);
 
-        // array_print(device_array);
+        array_print(device_array);
         //  Start of correctness check
         CALI_MARK_BEGIN(correct);
         if (correctness_check(device_array))
