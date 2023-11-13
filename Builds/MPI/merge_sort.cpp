@@ -8,14 +8,17 @@
 const char* comp = "comp";
 const char* comp_large = "comp_large";
 const char* comp_small = "comp_small";
-const char* main_region = "main_region";
+const char* main_region = "main";
 const char* comm = "comm";
 const char* comm_large = "comm_large";
 const char* data_init = "data_init";
+const char* correct = "correctness_check";
+const char *gather = "MPI_Gather";
+const char *scatter = "MPI_Scatter";
 
 int random_int()
 {
-  return (int)rand()/(int)RAND_MAX;
+  return (int)rand();
 }
 
 void array_fill(int *arr, int length)
@@ -96,7 +99,11 @@ void parallelMergeSort(int* global_arr, int* temp, int n) {
     CALI_MARK_BEGIN(comm);
     // Start of CommLarge
     CALI_MARK_BEGIN(comm_large);
+    // Start of MPI Scatter
+    CALI_MARK_BEGIN(scatter);
     MPI_Scatter(global_arr, local_n, MPI_INT, local_arr, local_n, MPI_INT, 0, MPI_COMM_WORLD);
+    // End of MPI Scatter
+    CALI_MARK_END(scatter);
     // End of CommLarge
     CALI_MARK_END(comm_large);
     // End of Comm
@@ -118,7 +125,11 @@ void parallelMergeSort(int* global_arr, int* temp, int n) {
     CALI_MARK_BEGIN(comm);
     // Start of CommLarge
     CALI_MARK_BEGIN(comm_large);
+    // Start of MPI Gather 
+    CALI_MARK_BEGIN(gather);
     MPI_Gather(local_arr, local_n, MPI_INT, global_arr, local_n, MPI_INT, 0, MPI_COMM_WORLD);
+    // End of MPI Gather 
+    CALI_MARK_END(gather);
     // End of CommLarge
     CALI_MARK_END(comm_large);
     // End of Comm
@@ -181,11 +192,15 @@ int main(int argc, char** argv) {
     if (rank == 0) {
         // Print the sorted array on the root process
         //array_print(arr, n);
+        // Start of correctness check
+        CALI_MARK_BEGIN(correct);
         if (correctness_check(arr,n)) {
             std::cout << "The array is correctly sorted." << std::endl;
         } else {
             std::cout << "The array is not correctly sorted." << std::endl;
         }
+        // End of correctness check
+        CALI_MARK_END(correct);
         free(arr);
     }
 

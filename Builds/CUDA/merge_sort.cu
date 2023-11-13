@@ -6,17 +6,19 @@
 #include <caliper/cali-manager.h>
 #include <adiak.hpp>
 #include <cuda_runtime.h>
-#include <cuda.h> 
+#include <cuda.h>
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
 
-const char* comp = "comp";
-const char* comp_large = "comp_large";
-const char* main_region = "main_region";
-const char* comm = "comm";
-const char* comm_large = "comm_large";
-const char* data_init = "data_init";
+const char *comp = "comp";
+const char *comp_large = "comp_large";
+const char *main_region = "main";
+const char *comm = "comm";
+const char *comm_large = "comm_large";
+const char *data_init = "data_init";
+const char *cudaMem = "cudaMemcpy";
+const char *correct = "correctness_check";
 
 int THREADS;
 int BLOCKS;
@@ -24,130 +26,152 @@ int NUM_VALS;
 
 void print_elapsed(clock_t start, clock_t stop)
 {
-  double elapsed = ((double) (stop - start)) / CLOCKS_PER_SEC;
+  double elapsed = ((double)(stop - start)) / CLOCKS_PER_SEC;
   printf("Elapsed time: %.3fs\n", elapsed);
 }
 
 int random_int()
 {
-  return (int)rand()/(int)RAND_MAX;
+  return (int)rand();
 }
 
 void array_fill(int *arr, int length)
 {
   srand(time(NULL));
   int i;
-  for (i = 0; i < length; ++i) {
+  for (i = 0; i < length; ++i)
+  {
     arr[i] = random_int();
   }
 }
 
-void array_print(int *arr, int length) 
+void array_print(int *arr, int length)
 {
   int i;
-  for (i = 0; i < length; ++i) {
-    printf("%1.3f ",  arr[i]);
+  for (i = 0; i < length; ++i)
+  {
+    printf("%1.3f ", arr[i]);
   }
   printf("\n");
 }
 
-bool correctness_check(int *arr, int length) 
+bool correctness_check(int *arr, int length)
 {
-    int i;
-    for (i = 1; i < length; i++)  
+  int i;
+  for (i = 1; i < length; i++)
+  {
+    if (arr[i - 1] > arr[i])
     {
-        if (arr[i - 1] > arr[i]) {
-            return false;
-        }
+      return false;
     }
-    return true;
+  }
+  return true;
 }
 
+__global__ void merge(int *list, int *sorted, int n, int width)
+{
+  int idx = threadIdx.x + blockDim.x * blockIdx.x;
+  int start = idx * width * 2;
+  int mid = start + width;
+  int end = start + 2 * width;
+  int i = start;
+  int j = mid;
+  int k = start;
 
-__global__ void merge(int *list, int *sorted, int n, int width) {
-    int idx = threadIdx.x + blockDim.x * blockIdx.x;
-    int start = idx * width * 2;
-    int mid = start + width;
-    int end = start + 2 * width;
-    int i = start;
-    int j = mid;
-    int k = start;
+  if (start >= n)
+    return;
 
-    if (start >= n) return;
+  if (end > n)
+    end = n;
+  if (mid > n)
+    mid = n;
 
-    if (end > n) end = n;
-    if (mid > n) mid = n;
-
-    while (i < mid && j < end) {
-        if (list[i] < list[j]) {
-            sorted[k++] = list[i++];
-        } else {
-            sorted[k++] = list[j++];
-        }
+  while (i < mid && j < end)
+  {
+    if (list[i] < list[j])
+    {
+      sorted[k++] = list[i++];
     }
+    else
+    {
+      sorted[k++] = list[j++];
+    }
+  }
 
-    while (i < mid) sorted[k++] = list[i++];
-    while (j < end) sorted[k++] = list[j++];
+  while (i < mid)
+    sorted[k++] = list[i++];
+  while (j < end)
+    sorted[k++] = list[j++];
 }
 
-void merge_sort(int *values) {
-    int *d_values, *d_sorted;
-    size_t size = NUM_VALS * sizeof(int);
-    int *temp;
+void merge_sort(int *values)
+{
+  int *d_values, *d_sorted;
+  size_t size = NUM_VALS * sizeof(int);
+  int *temp;
 
-    cudaMalloc((void**) &d_values, size);
-    cudaMalloc((void**) &d_sorted, size);
+  cudaMalloc((void **)&d_values, size);
+  cudaMalloc((void **)&d_sorted, size);
 
-    // Copy from host to device
-    // Start of Comm
-    CALI_MARK_BEGIN(comm);
-    // Start of Comm Large
-    CALI_MARK_BEGIN(comm_large);
-    cudaMemcpy(d_values, values, size, cudaMemcpyHostToDevice);
+  // Copy from host to device
+  // Start of Comm
+  CALI_MARK_BEGIN(comm);
+  // Start of Comm Large
+  CALI_MARK_BEGIN(comm_large);
+  // Start of cudaMemcpy
+  CALI_MARK_BEGIN(cudaMem);
+  cudaMemcpy(d_values, values, size, cudaMemcpyHostToDevice);
+  // End of cudaMemcpy
+  CALI_MARK_END(cudaMem);
+  // End of Comm Large
+  CALI_MARK_END(comm_large);
+  // End of Comm
+  CALI_MARK_END(comm);
 
-    // End of Comm Large 
-    CALI_MARK_END(comm_large);
-    // End of Comm
-    CALI_MARK_END(comm);
+  dim3 blocks(BLOCKS, 1);
+  dim3 threads(THREADS, 1);
 
-    dim3 blocks(BLOCKS, 1);
-    dim3 threads(THREADS, 1);
+  int width;
+  // Start of Comp
+  CALI_MARK_BEGIN(comp);
+  // Start of Comp Large
+  CALI_MARK_BEGIN(comp_large);
+  for (width = 1; width < NUM_VALS; width *= 2)
+  {
+    merge<<<blocks, threads>>>(d_values, d_sorted, NUM_VALS, width);
+    cudaDeviceSynchronize();
 
-    int width;
-    // Start of Comp
-    CALI_MARK_BEGIN(comp);
-    // Start of Comp Large
-    CALI_MARK_BEGIN(comp_large);
-    for (width = 1; width < NUM_VALS; width *= 2) {
-        merge<<<blocks, threads>>>(d_values, d_sorted, NUM_VALS, width);
-        cudaDeviceSynchronize();
+    // Swap pointers
+    temp = d_values;
+    d_values = d_sorted;
+    d_sorted = temp;
+  }
+  // End of Comp Large
+  CALI_MARK_END(comp_large);
+  // End of Comp
+  CALI_MARK_END(comp);
 
-        // Swap pointers
-        temp = d_values;
-        d_values = d_sorted;
-        d_sorted = temp;
-    }
-    // End of Comp Large 
-    CALI_MARK_END(comp_large);
-    // End of Comp
-    CALI_MARK_END(comp);
+  // Copy from device to host
+  // Start of Comm
+  CALI_MARK_BEGIN(comm);
+  // Start of Comm Large
+  CALI_MARK_BEGIN(comm_large);
+  // Start of cudaMemcpy
+  CALI_MARK_BEGIN(cudaMem);
+  cudaMemcpy(values, d_values, size, cudaMemcpyDeviceToHost);
+  // End of cudaMemcpy
+  CALI_MARK_END(cudaMem);
+  // End of Comm Large
+  CALI_MARK_END(comm_large);
+  // End of Comm
+  CALI_MARK_END(comm);
 
-    // Copy from device to host
-    // Start of Comm
-    CALI_MARK_BEGIN(comm);
-    // Start of Comm Large 
-    CALI_MARK_BEGIN(comm_large);
-    cudaMemcpy(values, d_values, size, cudaMemcpyDeviceToHost);
-    // End of Comm Large
-    CALI_MARK_END(comm_large);
-    // End of Comm
-    CALI_MARK_END(comm);
-
-    cudaFree(d_values);
-    cudaFree(d_sorted);
+  cudaFree(d_values);
+  cudaFree(d_sorted);
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
   // Start of Main
   CALI_MARK_BEGIN(main_region);
 
@@ -167,7 +191,7 @@ int main(int argc, char *argv[]) {
 
   // Start of Data Init
   CALI_MARK_BEGIN(data_init);
-  int *random_values = (int*) malloc( NUM_VALS * sizeof(int));
+  int *random_values = (int *)malloc(NUM_VALS * sizeof(int));
 
   array_fill(random_values, NUM_VALS);
   // End of Data Init
@@ -179,16 +203,23 @@ int main(int argc, char *argv[]) {
 
   print_elapsed(start, stop);
 
+  // array_print(random_values, NUM_VALS);
+  // Start of correctness check
+  CALI_MARK_BEGIN(correct);
+  if (correctness_check(random_values, NUM_VALS))
+  {
+    std::cout << "The array is correctly sorted." << std::endl;
+  }
+  else
+  {
+    std::cout << "The array is not correctly sorted." << std::endl;
+  }
+  // End of correctness check
+  CALI_MARK_END(correct);
+
   // End of Main
   CALI_MARK_END(main_region);
-  
-  //array_print(random_values, NUM_VALS);
-  if (correctness_check(random_values, NUM_VALS)) {
-            std::cout << "The array is correctly sorted." << std::endl;
-        } else {
-            std::cout << "The array is not correctly sorted." << std::endl;
-        }
-  
+
   adiak::init(NULL);
   adiak::user();
   adiak::launchdate();

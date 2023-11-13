@@ -22,10 +22,12 @@ int NUM_VALS;
 
 const char* comp = "comp";
 const char* comp_large = "comp_large";
-const char* main_region = "main_region";
+const char* main_region = "main";
 const char* comm = "comm";
 const char* comm_large = "comm_large";
 const char* data_init = "data_init";
+const char* correct = "correctness_check";
+const char* cudaMem = "cudaMemcpy";
 
 void print_elapsed(clock_t start, clock_t stop)
 {
@@ -35,7 +37,7 @@ void print_elapsed(clock_t start, clock_t stop)
 
 int random_int()
 {
-  return (int)rand()/(int)RAND_MAX;
+  return (int)rand();
 }
 
 void array_fill(int *arr, int length)
@@ -112,7 +114,11 @@ void bitonic_sort(int *values)
   CALI_MARK_BEGIN(comm);
   // Start of Comm Large
   CALI_MARK_BEGIN(comm_large);
+  // Start of cudaMemcpy
+  CALI_MARK_BEGIN(cudaMem);
   cudaMemcpy(dev_values, values, size, cudaMemcpyHostToDevice);
+  // End of cudaMemcpy
+  CALI_MARK_END(cudaMem);
   // End of Comm Large
   CALI_MARK_END(comm_large);
   // End of Comm
@@ -147,7 +153,11 @@ void bitonic_sort(int *values)
   CALI_MARK_BEGIN(comm);
   // Start of Comm Large
   CALI_MARK_BEGIN(comm_large);
+  // Start of cudaMemcpy
+  CALI_MARK_BEGIN(cudaMem);
   cudaMemcpy(values, dev_values, size, cudaMemcpyDeviceToHost);
+  // End of cudaMemcpy
+  CALI_MARK_END(cudaMem);
   // End of Comm Large
   CALI_MARK_END(comm_large);
   // End of Comm
@@ -157,7 +167,7 @@ void bitonic_sort(int *values)
 }
 
 int main(int argc, char *argv[])
-{
+{ 
   // Begin of Main
   CALI_MARK_BEGIN(main_region);
 
@@ -189,18 +199,21 @@ int main(int argc, char *argv[])
   stop = clock();
 
   print_elapsed(start, stop);
-
-  // End of Main
-  CALI_MARK_END(main_region);
   
   //array_print(random_values, NUM_VALS);
+  // Start of correctness check
+  CALI_MARK_BEGIN(correct);
   if (correctness_check(random_values, NUM_VALS)) {
             std::cout << "The array is correctly sorted." << std::endl;
         } else {
             std::cout << "The array is not correctly sorted." << std::endl;
         }
-
+  // End of correctness check
+  CALI_MARK_END(correct);
   printf("Correct: %s", correctness_check(random_values, NUM_VALS) ? "true" : "false");
+
+  // End of Main
+  CALI_MARK_END(main_region);
   
   adiak::init(NULL);
   adiak::user();

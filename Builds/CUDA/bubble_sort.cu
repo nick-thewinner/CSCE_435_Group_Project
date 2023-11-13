@@ -15,8 +15,10 @@ const char *comm = "comm";
 const char *comm_large = "comm_large";
 const char *comp = "comp";
 const char *comp_large = "comp_large";
-const char *main_region = "main_region";
+const char *main_region = "main";
 const char *data_init = "data_init";
+const char *correct = "correctness_check";
+const char *cudaMem = "cudaMemcpy";
 
 int THREADS;
 int BLOCKS;
@@ -30,7 +32,7 @@ void print_elapsed(clock_t start, clock_t stop)
 
 int random_int()
 {
-    return static_cast<int>(rand()) / static_cast<int>(RAND_MAX);
+    return static_cast<int>(rand());
 }
 
 void array_fill(int *arr, int length)
@@ -66,24 +68,24 @@ bool correctness_check(int *arr, int length)
 __global__ void odd_swaps(int *random_vals, int n)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if((i % 2 != 0) && (i < n-2) && (random_vals[i] >= random_vals[i+1])){
+    if ((i % 2 != 0) && (i < n - 2) && (random_vals[i] >= random_vals[i + 1]))
+    {
         int temp = random_vals[i];
-        random_vals[i] = random_vals[i+1];
-        random_vals[i+1] = temp;
+        random_vals[i] = random_vals[i + 1];
+        random_vals[i + 1] = temp;
     }
 }
 
 __global__ void even_swaps(int *random_vals, int n)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if((i % 2 == 0) && (i < n-1) && (random_vals[i] >= random_vals[i+1])){
+    if ((i % 2 == 0) && (i < n - 1) && (random_vals[i] >= random_vals[i + 1]))
+    {
         int temp = random_vals[i];
-        random_vals[i] = random_vals[i+1];
-        random_vals[i+1] = temp;
+        random_vals[i] = random_vals[i + 1];
+        random_vals[i + 1] = temp;
     }
 }
-
-
 
 void bubble_sort(int *values)
 {
@@ -96,7 +98,11 @@ void bubble_sort(int *values)
     CALI_MARK_BEGIN(comm);
     // Start of Comm Large
     CALI_MARK_BEGIN(comm_large);
+    // Start of cudaMemcpy
+    CALI_MARK_BEGIN(cudaMem);
     cudaMemcpy(d_values, values, size, cudaMemcpyHostToDevice);
+    // End of cudaMemcpy
+    CALI_MARK_END(cudaMem);
     // End of Comm Large
     CALI_MARK_END(comm_large);
     // End of Comm
@@ -109,9 +115,10 @@ void bubble_sort(int *values)
     CALI_MARK_BEGIN(comp);
     // Start of Comp large
     CALI_MARK_BEGIN(comp_large);
-    //invoke the kernel functions (both even swapping and odd swapping)
+    // invoke the kernel functions (both even swapping and odd swapping)
     int i = 0;
-    while (i < NUM_VALS){
+    while (i < NUM_VALS)
+    {
         even_swaps<<<threads, blocks>>>(d_values, NUM_VALS);
         odd_swaps<<<threads, blocks>>>(d_values, NUM_VALS);
         i++;
@@ -127,12 +134,16 @@ void bubble_sort(int *values)
     CALI_MARK_BEGIN(comm);
     // Start of Comm Large
     CALI_MARK_BEGIN(comm_large);
+    // Start of cudaMemcpy
+    CALI_MARK_BEGIN(cudaMem);
     cudaMemcpy(values, d_values, size, cudaMemcpyDeviceToHost);
+    // End of cudaMemcpy
+    CALI_MARK_END(cudaMem);
     // End of Comm Large
     CALI_MARK_END(comm_large);
-    // End of Comm 
+    // End of Comm
     CALI_MARK_END(comm);
-    
+
     cudaFree(d_values);
 }
 
@@ -169,16 +180,22 @@ int main(int argc, char *argv[])
 
     print_elapsed(start, stop);
 
+    // array_print(random_values, NUM_VALS);
+    // Start of correctness check
+    CALI_MARK_BEGIN(correct);
+    if (correctness_check(random_values, NUM_VALS))
+    {
+        std::cout << "The array is correctly sorted." << std::endl;
+    }
+    else
+    {
+        std::cout << "The array is not correctly sorted." << std::endl;
+    }
+    // End of correctness check
+    CALI_MARK_END(correct);
+
     // End of Main
     CALI_MARK_END(main_region);
-
-    //array_print(random_values, NUM_VALS);
-
-    if (correctness_check(random_values, NUM_VALS)) {
-            std::cout << "The array is correctly sorted." << std::endl;
-        } else {
-            std::cout << "The array is not correctly sorted." << std::endl;
-        }
 
     adiak::init(NULL);
     adiak::user();
