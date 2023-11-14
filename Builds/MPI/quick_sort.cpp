@@ -24,18 +24,14 @@ int random_int()
 
 void array_fill(int *arr, int length, int sort_type)
 {
-<<<<<<< HEAD
 
 //fill array with random values
   if (sort_type == 1) 
   {
-=======
->>>>>>> b295983833aad559ed77c154a3ee383ca332eb9b
     srand(time(NULL));
     int i;
     for (i = 0; i < length; ++i)
     {
-<<<<<<< HEAD
       arr[i] = random_int();
     }
   }
@@ -77,10 +73,6 @@ void array_fill(int *arr, int length, int sort_type)
   {
     printf("Invalid sort type.\n");
   }
-=======
-        arr[i] = random_int();
-    }
->>>>>>> b295983833aad559ed77c154a3ee383ca332eb9b
 }
 
 void array_print(int *arr, int length)

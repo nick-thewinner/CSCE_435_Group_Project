@@ -15,10 +15,7 @@
 #include <adiak.hpp>
 #include <cuda_runtime.h>
 #include <cuda.h>
-<<<<<<< HEAD
-=======
 #include <random> 
->>>>>>> b295983833aad559ed77c154a3ee383ca332eb9b
 
 int THREADS;
 int BLOCKS;
@@ -26,14 +23,6 @@ int NUM_VALS;
 int SORT_TYPE; // 1: random, 2: reverse, 3: sorted, 4: 1%
 float SORT_TYPE_STR;
 
-<<<<<<< HEAD
-const char *comp = "comp";
-const char *comp_large = "comp_large";
-const char *main_region = "main_region";
-const char *comm = "comm";
-const char *comm_large = "comm_large";
-const char *data_init = "data_init";
-=======
 const char* comp = "comp";
 const char* comp_large = "comp_large";
 const char* main_region = "main";
@@ -42,7 +31,6 @@ const char* comm_large = "comm_large";
 const char* data_init = "data_init";
 const char* correct = "correctness_check";
 const char* cudaMem = "cudaMemcpy";
->>>>>>> b295983833aad559ed77c154a3ee383ca332eb9b
 
 void print_elapsed(clock_t start, clock_t stop)
 {
@@ -52,11 +40,7 @@ void print_elapsed(clock_t start, clock_t stop)
 
 int random_int()
 {
-<<<<<<< HEAD
-  return (int)rand() / (int)RAND_MAX;
-=======
   return (int)rand();
->>>>>>> b295983833aad559ed77c154a3ee383ca332eb9b
 }
 
 void array_fill(int *arr, int length, int sort_type)
@@ -119,14 +103,8 @@ void array_fill(int *arr, int length, int sort_type)
 void array_print(int *arr, int length)
 {
   int i;
-<<<<<<< HEAD
-  for (i = 0; i < length; ++i)
-  {
-    printf("%1.3f ", arr[i]);
-=======
   for (i = 0; i < length; ++i) {
     std::cout << arr[i] << " ";
->>>>>>> b295983833aad559ed77c154a3ee383ca332eb9b
   }
   std::cout << std::endl;
 }
@@ -280,24 +258,6 @@ int main(int argc, char *argv[])
   stop = clock();
 
   print_elapsed(start, stop);
-<<<<<<< HEAD
-
-  // End of Main
-  CALI_MARK_END(main_region);
-
-  // array_print(random_values, NUM_VALS);
-  if (correctness_check(random_values, NUM_VALS))
-  {
-    std::cout << "The array is correctly sorted." << std::endl;
-  }
-  else
-  {
-    std::cout << "The array is not correctly sorted." << std::endl;
-  }
-
-  printf("Correct: %s", correctness_check(random_values, NUM_VALS) ? "true" : "false");
-
-=======
   
   array_print(random_values, NUM_VALS);
   // Start of correctness check
@@ -314,7 +274,6 @@ int main(int argc, char *argv[])
   // End of Main
   CALI_MARK_END(main_region);
   
->>>>>>> b295983833aad559ed77c154a3ee383ca332eb9b
   adiak::init(NULL);
   adiak::user();
   adiak::launchdate();
