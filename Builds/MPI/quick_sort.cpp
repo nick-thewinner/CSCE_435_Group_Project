@@ -19,12 +19,56 @@ int random_int()
   return (int)rand()/(int)RAND_MAX;
 }
 
-void array_fill(int *arr, int length)
+void array_fill(int *arr, int length, int sort_type)
 {
-  srand(time(NULL));
-  int i;
-  for (i = 0; i < length; ++i) {
-    arr[i] = random_int();
+
+//fill array with random values
+  if (sort_type == 1) 
+  {
+    srand(time(NULL));
+    int i;
+    for (i = 0; i < length; ++i)
+    {
+      arr[i] = random_int();
+    }
+  }
+  //reverse sorted array
+  else if (sort_type == 2) 
+  {
+    int i;
+    for (i = 0; i < length; ++i)
+    {
+      arr[i] = length - i;
+    }
+  }
+  //sorted array
+  else if (sort_type == 3) 
+  {
+    int i;
+    for (i = 0; i < length; ++i)
+    {
+      arr[i] = i;
+    }
+  }
+  // 1% perturbation of the array
+  else if(sort_type == 4)
+  {
+    int i;
+    for (i = 0; i < length; ++i)
+    {
+      if(i <= static_cast<float>(length) * 0.01)
+      {
+        arr[i] = random_int();
+      }
+      else
+      {
+        arr[i] = i;
+      }
+    }
+  }
+  else
+  {
+    printf("Invalid sort type.\n");
   }
 }
 

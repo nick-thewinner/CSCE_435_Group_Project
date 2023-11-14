@@ -48,14 +48,39 @@ void bubble_sort(std::vector<int>& arr) {
     } while (swapped);
 }
 
-std::vector<int> vector_fill(size_t num_elements) {
+std::vector<int> vector_fill(size_t num_elements, int sort_type) {
     std::vector<int> arr(num_elements);
     std::srand(static_cast<unsigned>(std::time(nullptr)));
-    for (auto& value : arr) {
-        value = random_int();
+    if (sort_type == 1) {
+        for (auto& value : arr) {
+            value = random_int();
+        }
+    } else if (sort_type == 2) {
+        int cnt = num_elements;
+        for (auto& value : arr) {
+            value = cnt;
+            cnt--;
+        }
+    } else if (sort_type == 3) {
+        int cnt = 0;
+        for (auto& value : arr) {
+            value = cnt;
+            cnt++;
+        }
+    } else if (sort_type == 4) {
+        int i;
+        for (i = 0; i < num_elements; ++i) {
+            if(i <= static_cast<float>(num_elements) * 0.01) {
+                arr[i] = random_int();
+            }
+            else {
+                arr[i] = i;
+            }
+        }
     }
     return arr;
 }
+
 
   int main(int argc, char *argv[]) {
     // Start of Main

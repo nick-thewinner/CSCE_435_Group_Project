@@ -21,6 +21,8 @@ const char* data_init = "data_init";
 int THREADS;
 int BLOCKS;
 int NUM_VALS;
+int SORT_TYPE; // 1: random, 2: reverse, 3: sorted, 4: 1%
+float SORT_TYPE_STR;
 
 void print_elapsed(clock_t start, clock_t stop)
 {
@@ -33,12 +35,60 @@ int random_int()
   return (int)rand()/(int)RAND_MAX;
 }
 
-void array_fill(int *arr, int length)
+void array_fill(int *arr, int length, int sort_type)
 {
-  srand(time(NULL));
-  int i;
-  for (i = 0; i < length; ++i) {
-    arr[i] = random_int();
+
+//fill array with random values
+  if (sort_type == 1) 
+  {
+    srand(time(NULL));
+    int i;
+    for (i = 0; i < length; ++i)
+    {
+      arr[i] = random_int();
+    }
+    SORT_TYPE_STR = "random";
+  }
+  //reverse sorted array
+  else if (sort_type == 2) 
+  {
+    int i;
+    for (i = 0; i < length; ++i)
+    {
+      arr[i] = length - i;
+    }
+    SORT_TYPE_STR = "reverse";
+  }
+  //sorted array
+  else if (sort_type == 3) 
+  {
+    int i;
+    for (i = 0; i < length; ++i)
+    {
+      arr[i] = i;
+    }
+    SORT_TYPE_STR = "sorted";
+  }
+  // 1% perturbation of the array
+  else if(sort_type == 4)
+  {
+    int i;
+    for (i = 0; i < length; ++i)
+    {
+      if(i <= static_cast<float>(length) * 0.01)
+      {
+        arr[i] = random_int();
+      }
+      else
+      {
+        arr[i] = i;
+      }
+    }
+    SORT_TYPE_STR = "1% Perturbation";
+  }
+  else
+  {
+    printf("Invalid sort type.\n");
   }
 }
 
@@ -153,6 +203,7 @@ int main(int argc, char *argv[]) {
 
   THREADS = atoi(argv[1]);
   NUM_VALS = atoi(argv[2]);
+  SORT_TYPE = atoi(argv[3]);
   BLOCKS = NUM_VALS / THREADS;
 
   printf("Number of threads: %d\n", THREADS);
@@ -169,7 +220,7 @@ int main(int argc, char *argv[]) {
   CALI_MARK_BEGIN(data_init);
   int *random_values = (int*) malloc( NUM_VALS * sizeof(int));
 
-  array_fill(random_values, NUM_VALS);
+  array_fill(random_values, NUM_VALS, SORT_TYPE);
   // End of Data Init
   CALI_MARK_END(data_init);
 
@@ -200,7 +251,7 @@ int main(int argc, char *argv[]) {
   adiak::value("Datatype", "int");
   adiak::value("SizeOfDatatype", sizeof(int));
   adiak::value("InputSize", NUM_VALS);
-  adiak::value("InputType", "Random");
+  adiak::value("InputType", SORT_TYPE_STR);
   adiak::value("num_threads", THREADS);
   adiak::value("num_blocks", BLOCKS);
   adiak::value("group_num", "11");
