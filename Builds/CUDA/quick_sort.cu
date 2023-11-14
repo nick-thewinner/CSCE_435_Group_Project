@@ -14,10 +14,12 @@
 
 const char *comp = "comp";
 const char *comp_large = "comp_large";
-const char *main_region = "main_region";
+const char *main_region = "main";
 const char *comm = "comm";
 const char *comm_large = "comm_large";
 const char *data_init = "data_init";
+const char *correct = "correctness_check";
+const char *cudaMem = "cudaMemcpy";
 
 int THREADS;
 int BLOCKS;
@@ -33,7 +35,7 @@ void print_elapsed(clock_t start, clock_t stop)
 
 int random_int()
 {
-    return (int)rand() / (int)RAND_MAX;
+    return (int)rand();
 }
 
 void array_fill(int *arr, int length, int sort_type)
@@ -98,9 +100,9 @@ void array_print(int *arr, int length)
     int i;
     for (i = 0; i < length; ++i)
     {
-        printf("%1.3f ", arr[i]);
+        std::cout << arr[i] << " ";
     }
-    printf("\n");
+    std::cout << std::endl;
 }
 
 bool correctness_check(int *arr, int length)
@@ -118,62 +120,60 @@ bool correctness_check(int *arr, int length)
 
 __device__ int d_size;
 
-
-__global__ void partition (int *vals, int *stack_l, int *stack_h, int n)
+__global__ void partition(int *vals, int *stack_l, int *stack_h, int n)
 {
-    int z = blockIdx.x*blockDim.x+threadIdx.x;
+    int z = blockIdx.x * blockDim.x + threadIdx.x;
     d_size = 0;
     __syncthreads();
-    if (z<n)
-      {
+    if (z < n)
+    {
         int h = stack_h[z];
         int l = stack_l[z];
         int x = vals[h];
         int i = (l - 1);
         int temp;
-        
-        for (int j = l; j <= h- 1; j++)
-          {
+
+        for (int j = l; j <= h - 1; j++)
+        {
             if (x > vals[j])
-              {
+            {
                 i++;
                 temp = vals[i];
                 vals[i] = vals[j];
                 vals[j] = temp;
-              }
-          }
-        temp = vals[i+1];
-        vals[i+1] = vals[h];
+            }
+        }
+        temp = vals[i + 1];
+        vals[i + 1] = vals[h];
         vals[h] = temp;
         int p_val = (i + 1);
-        if ( p_val+1 < h )
-          {
+        if (p_val + 1 < h)
+        {
             int index = atomicAdd(&d_size, 1);
-            stack_h[index] = h; 
-            stack_l[index] = p_val+1;
-          }
-        if (p_val-1 > l)
-          {
+            stack_h[index] = h;
+            stack_l[index] = p_val + 1;
+        }
+        if (p_val - 1 > l)
+        {
             int index = atomicAdd(&d_size, 1);
-            stack_h[index] = p_val-1;  
+            stack_h[index] = p_val - 1;
             stack_l[index] = l;
-          }
-      }
+        }
+    }
 }
 
 void quick_sort(int *values)
 {
     int *d_data;
-    int* d_l;
+    int *d_l;
     int *d_h;
-    int lstack[ NUM_VALS ], hstack[ NUM_VALS ];
+    int lstack[NUM_VALS], hstack[NUM_VALS];
     int top = -1;
-    lstack[ ++top ] = 0;
-    hstack[ top ] = NUM_VALS - 1;
+    lstack[++top] = 0;
+    hstack[top] = NUM_VALS - 1;
 
- 
     size_t size = NUM_VALS * sizeof(int);
-   
+
     cudaMalloc((void **)&d_data, size);
     cudaMalloc((void **)&d_h, size);
     cudaMalloc((void **)&d_l, size);
@@ -183,11 +183,14 @@ void quick_sort(int *values)
     CALI_MARK_BEGIN(comm);
     // Start of Comm Large
     CALI_MARK_BEGIN(comm_large);
-
+    // Start of cudaMemcpy
+    CALI_MARK_BEGIN(cudaMem);
     cudaMemcpy(d_data, values, size, cudaMemcpyHostToDevice);
     cudaMemcpy(d_l, lstack, size, cudaMemcpyHostToDevice);
     cudaMemcpy(d_h, hstack, size, cudaMemcpyHostToDevice);
-    
+    // End of cudaMemcpy
+    CALI_MARK_END(cudaMem);
+
     // End of Comm Large
     CALI_MARK_END(comm_large);
     // End of Comm
@@ -198,14 +201,14 @@ void quick_sort(int *values)
     CALI_MARK_BEGIN(comp);
     // Start of Comp Large
     CALI_MARK_BEGIN(comp_large);
-    int n_i = 1; 
+    int n_i = 1;
     dim3 blocks(BLOCKS, 1);
     dim3 threads(THREADS, 1);
-    while ( n_i > 0 )
+    while (n_i > 0)
     {
-        partition<<<blocks,threads>>>( d_data, d_l, d_h, n_i);
+        partition<<<blocks, threads>>>(d_data, d_l, d_h, n_i);
         int answer;
-        cudaMemcpyFromSymbol(&answer, d_size, sizeof(int), 0, cudaMemcpyDeviceToHost); 
+        cudaMemcpyFromSymbol(&answer, d_size, sizeof(int), 0, cudaMemcpyDeviceToHost);
         n_i = answer;
     }
     // End of Comp Large
@@ -218,16 +221,19 @@ void quick_sort(int *values)
     CALI_MARK_BEGIN(comm);
     // Start of Comm Large
     CALI_MARK_BEGIN(comm_large);
+    // Start of cudaMemcpy
+    CALI_MARK_BEGIN(cudaMem);
     cudaMemcpy(values, d_data, size, cudaMemcpyDeviceToHost);
+    // End of cudaMemcpy
+    CALI_MARK_END(cudaMem);
     // End of Comm Large
     CALI_MARK_END(comm_large);
-    // End of Comm 
+    // End of Comm
     CALI_MARK_END(comm);
 
     cudaFree(d_data);
-    
 }
- 
+
 int main(int argc, char *argv[])
 {
     // Start of Main
@@ -262,16 +268,22 @@ int main(int argc, char *argv[])
 
     print_elapsed(start, stop);
 
+    array_print(random_values, NUM_VALS);
+    // Start of correctness check
+    CALI_MARK_BEGIN(correct);
+    if (correctness_check(random_values, NUM_VALS))
+    {
+        std::cout << "The array is correctly sorted." << std::endl;
+    }
+    else
+    {
+        std::cout << "The array is not correctly sorted." << std::endl;
+    }
+    // End of correctness check
+    CALI_MARK_END(correct);
+
     // End of Main
     CALI_MARK_END(main_region);
-
-    //array_print(random_values, NUM_VALS);
-
-    if (correctness_check(random_values, NUM_VALS)) {
-            std::cout << "The array is correctly sorted." << std::endl;
-        } else {
-            std::cout << "The array is not correctly sorted." << std::endl;
-        }
 
     adiak::init(NULL);
     adiak::user();

@@ -12,16 +12,20 @@ const char* comp_large = "comp_large";
 const char* comm = "comm";
 const char* comm_small = "comm_small";
 const char* comm_large = "comm_large";
-const char* main_region = "main_region";
+const char* main_region = "main";
 const char* data_init = "data_init";
+const char* correct = "correctness_check";
+const char* gather = "MPI_Gather";
+const char* scatter = "MPI_Scatter";
 
 int random_int()
 {
-  return (int)rand()/(int)RAND_MAX;
+  return (int)rand();
 }
 
 void array_fill(int *arr, int length, int sort_type)
 {
+<<<<<<< HEAD
 
 //fill array with random values
   if (sort_type == 1) 
@@ -70,6 +74,12 @@ void array_fill(int *arr, int length, int sort_type)
   else
   {
     printf("Invalid sort type.\n");
+=======
+  srand(time(0));
+  int i;
+  for (i = 0; i < length; ++i) {
+    arr[i] = random_int();
+>>>>>>> b295983833aad559ed77c154a3ee383ca332eb9b
   }
 }
 
@@ -77,9 +87,9 @@ void array_print(int *arr, int length)
 {
   int i;
   for (i = 0; i < length; ++i) {
-    printf("%1.3f ",  arr[i]);
+    std::cout << arr[i] << " ";
   }
-  printf("\n");
+  std::cout << std::endl;
 }
 
 bool correctness_check(int *arr, int length) 
@@ -147,23 +157,46 @@ int main(int argc, char **argv)
     // Start of Data Init
     CALI_MARK_BEGIN(data_init);
 
-    int *arr = (int *)malloc(local_n * sizeof(int));
-    int *recvbuf = NULL;
+    int *arr = nullptr;
+    int *recvbuf = nullptr;
+
     if (rank == 0)
     {
-        recvbuf = (int *)malloc(n * sizeof(int)); // Note that it's 'n', not 'local_n' because root will gather all data.
+        // Allocate memory for the entire array on the root process
+        arr = (int *)malloc(n * sizeof(int));
+        // Fill the array with random values
+        array_fill(arr, n);
     }
 
-    array_fill(arr, n);
+    // Allocate memory for the local array on each process
+    recvbuf = (int *)malloc(local_n * sizeof(int));
+
+    //array_print(arr, local_n);
     // End of Data Init
     CALI_MARK_END(data_init);
+
+    // Start of Comm
+    CALI_MARK_BEGIN(comm);
+    // Start of Comm Large
+    CALI_MARK_BEGIN(comm_large);
+    // Start of MPI scatter
+    CALI_MARK_BEGIN(scatter);
+    // Scatter different portions of the array to each process
+    MPI_Scatter(arr, local_n, MPI_INT, recvbuf, local_n, MPI_INT, 0, MPI_COMM_WORLD);
+
+    // End of MPI scatter
+    CALI_MARK_END(scatter);
+    // End of Comm Large
+    CALI_MARK_END(comm_large);
+    // End of Comm
+    CALI_MARK_END(comm);
 
     // Each process sorts its local array
     // Start of Comp
     CALI_MARK_BEGIN(comp);
     // Start of CompSmall
     CALI_MARK_BEGIN(comp_small);
-    bitonicSort(arr, 0, local_n, 1); // 1 for ascending order
+    bitonicSort(recvbuf, 0, local_n, 1); // 1 for ascending order
     // End of CompSmall
     CALI_MARK_END(comp_small);
     // End of Comp 
@@ -174,8 +207,12 @@ int main(int argc, char **argv)
     CALI_MARK_BEGIN(comm);
     // Start of CommLarge
     CALI_MARK_BEGIN(comm_large);
-    MPI_Gather(arr, local_n, MPI_INT, recvbuf, local_n, MPI_INT, 0, MPI_COMM_WORLD);
-    // Start of CommLarge
+    // Start of MPI Gather
+    CALI_MARK_BEGIN(gather);
+    MPI_Gather(recvbuf, local_n, MPI_INT, arr, local_n, MPI_INT, 0, MPI_COMM_WORLD);
+    // End of MPI Gather
+    CALI_MARK_END(gather);
+    // End of CommLarge
     CALI_MARK_END(comm_large);
     // End of Comm
     CALI_MARK_END(comm);
@@ -187,18 +224,22 @@ int main(int argc, char **argv)
         CALI_MARK_BEGIN(comp);
         // Start of CompLarge
         CALI_MARK_BEGIN(comp_large);
-        bitonicSort(recvbuf, 0, n, 1); // 1 for ascending order
+        bitonicSort(arr, 0, n, 1); // 1 for ascending order
         // End of CompLarge
         CALI_MARK_END(comp_large);
         // End of Comp
         CALI_MARK_END(comp);
 
-        array_print(recvbuf, n);
-        if (correctness_check(recvbuf,n)) {
+        array_print(arr, n);
+        // Start of correctness check
+        CALI_MARK_BEGIN(correct);
+        if (correctness_check(arr,n)) {
             std::cout << "The array is correctly sorted." << std::endl;
         } else {
             std::cout << "The array is not correctly sorted." << std::endl;
         }
+        // End of correctness check
+        CALI_MARK_END(correct);
     }
 
     //free(arr);
