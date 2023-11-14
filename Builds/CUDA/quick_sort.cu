@@ -257,7 +257,7 @@ int main(int argc, char *argv[])
     CALI_MARK_BEGIN(data_init);
     int *random_values = (int *)malloc(NUM_VALS * sizeof(int));
 
-    array_fill(random_values, NUM_VALS);
+    array_fill(random_values, NUM_VALS, SORT_TYPE);
     // End of Data Init
     CALI_MARK_END(data_init);
 
