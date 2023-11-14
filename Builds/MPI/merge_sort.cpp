@@ -15,7 +15,8 @@ const char* data_init = "data_init";
 const char* correct = "correctness_check";
 const char *gather = "MPI_Gather";
 const char *scatter = "MPI_Scatter";
-
+int SORT_TYPE;
+std::string SORT_TYPE_STR;
 int random_int()
 {
   return (int)rand();
@@ -23,8 +24,7 @@ int random_int()
 
 void array_fill(int *arr, int length, int sort_type)
 {
-
-//fill array with random values
+  //fill array with random values
   if (sort_type == 1) 
   {
     srand(time(NULL));
@@ -33,6 +33,7 @@ void array_fill(int *arr, int length, int sort_type)
     {
       arr[i] = random_int();
     }
+    SORT_TYPE_STR = "random";
   }
   //reverse sorted array
   else if (sort_type == 2) 
@@ -42,6 +43,7 @@ void array_fill(int *arr, int length, int sort_type)
     {
       arr[i] = length - i;
     }
+    SORT_TYPE_STR = "reverse";
   }
   //sorted array
   else if (sort_type == 3) 
@@ -51,6 +53,7 @@ void array_fill(int *arr, int length, int sort_type)
     {
       arr[i] = i;
     }
+    SORT_TYPE_STR = "sorted";
   }
   // 1% perturbation of the array
   else if(sort_type == 4)
@@ -67,6 +70,7 @@ void array_fill(int *arr, int length, int sort_type)
         arr[i] = i;
       }
     }
+    SORT_TYPE_STR = "1% perturbation";
   }
   else
   {
@@ -214,6 +218,7 @@ int main(int argc, char** argv) {
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     //printf("%d\n", size);
     int n = std::stoi(argv[1]); // Total number of elements
+    SORT_TYPE = std::stoi(argv[2]);
     // Create caliper ConfigManager object
     cali::ConfigManager mgr;
     mgr.start();
@@ -226,7 +231,7 @@ int main(int argc, char** argv) {
         // Start of Data Init
         CALI_MARK_BEGIN(data_init);
         arr = (int*)malloc(n * sizeof(int));
-        array_fill(arr, n);
+        array_fill(arr, n, SORT_TYPE);
         // End of Data Init
         CALI_MARK_END(data_init);
     }

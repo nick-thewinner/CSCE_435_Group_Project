@@ -19,6 +19,8 @@ const char *send_m = "MPI_Send";
 const char *recv_m = "MPI_Recv";
 const char *barrier = "MPI_Barrier";
 
+std::string SORT_TYPE_STR;
+
 bool correctness_check(const std::vector<int> &arr)
 {
     for (size_t i = 1; i < arr.size(); i++)
@@ -62,56 +64,55 @@ void bubble_sort(std::vector<int> &arr)
     } while (swapped);
 }
 
-<<<<<<< HEAD
-std::vector<int> vector_fill(size_t num_elements, int sort_type) {
-    std::vector<int> arr(num_elements);
-    std::srand(static_cast<unsigned>(std::time(nullptr)));
-    if (sort_type == 1) {
-        for (auto& value : arr) {
-            value = random_int();
-        }
-    } else if (sort_type == 2) {
-        int cnt = num_elements;
-        for (auto& value : arr) {
-            value = cnt;
-            cnt--;
-        }
-    } else if (sort_type == 3) {
-        int cnt = 0;
-        for (auto& value : arr) {
-            value = cnt;
-            cnt++;
-        }
-    } else if (sort_type == 4) {
-        int i;
-        for (i = 0; i < num_elements; ++i) {
-            if(i <= static_cast<float>(num_elements) * 0.01) {
-                arr[i] = random_int();
-            }
-            else {
-                arr[i] = i;
-            }
-        }
-=======
-std::vector<int> vector_fill(size_t num_elements)
+std::vector<int> vector_fill(size_t num_elements, int sort_type)
 {
     std::vector<int> arr(num_elements);
     std::srand(static_cast<unsigned>(std::time(nullptr)));
-    for (auto &value : arr)
-    {
-        value = random_int();
->>>>>>> b295983833aad559ed77c154a3ee383ca332eb9b
+    if (sort_type == 1) {
+        for (auto &value : arr)
+        {
+            value = random_int();
+        }
+        SORT_TYPE_STR = "random";
+
+    } else if (sort_type == 2) {
+        int cnt = num_elements;
+        for (auto &value : arr) {
+            value = cnt;
+            cnt--;
+        }
+        SORT_TYPE_STR = "reverse";
+
+    } else if (sort_type == 3) {
+        int cnt = 0;
+        for (auto &value : arr) {
+            value = cnt;
+            cnt++;
+        }
+        SORT_TYPE_STR = "sorted";
+
+    } else if (sort_type == 4) {
+        int i;
+            for (i = 0; i < num_elements; ++i)
+            {
+            if(i <= static_cast<float>(num_elements) * 0.01)
+            {
+                arr[i] = random_int();
+            }
+            else
+            {
+                arr[i] = i;
+            }
+        }
+        SORT_TYPE_STR = "1% perturbation";
+    } else {
+        printf("Invalid sort type.\n");
     }
     return arr;
 }
 
-<<<<<<< HEAD
-
-  int main(int argc, char *argv[]) {
-=======
 int main(int argc, char *argv[])
 {
->>>>>>> b295983833aad559ed77c154a3ee383ca332eb9b
     // Start of Main
     CALI_MARK_BEGIN(main_region);
     MPI_Init(&argc, &argv);
@@ -124,6 +125,7 @@ int main(int argc, char *argv[])
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
     const int number_of_elements = std::stoi(argv[1]);
+    
     // printf("%d\n", world_size);
     //  Create caliper ConfigManager object
     cali::ConfigManager mgr;
@@ -140,7 +142,7 @@ int main(int argc, char *argv[])
     {
         // Start of Data Init
         CALI_MARK_BEGIN(data_init);
-        std::vector<int> host_array = vector_fill(number_of_elements);
+        std::vector<int> host_array = vector_fill(number_of_elements, std::stoi(argv[2]));
         // End of Data Init
         CALI_MARK_END(data_init);
         // Start Comm
@@ -223,7 +225,7 @@ int main(int argc, char *argv[])
     adiak::value("Datatype", "Int");                     // The datatype of input elements (e.g., double, int, float)
     adiak::value("SizeOfDatatype", sizeof(int));         // sizeof(datatype) of input elements in bytes (e.g., 1, 2, 4)
     adiak::value("InputSize", number_of_elements);       // The number of elements in input dataset (1000)
-    adiak::value("InputType", "Random");                 // For sorting, this would be "Sorted", "ReverseSorted", "Random", "1%perturbed"
+    adiak::value("InputType", SORT_TYPE_STR);                 // For sorting, this would be "Sorted", "ReverseSorted", "Random", "1%perturbed"
     adiak::value("num_procs", world_size);               // The number of processors (MPI ranks)
     adiak::value("group_num", "11");                     // The number of your group (integer, e.g., 1, 10)
     adiak::value("implementation_source", "Online, AI"); // Where you got the source code of your algorithm; choices: ("Online", "AI", "Handwritten").

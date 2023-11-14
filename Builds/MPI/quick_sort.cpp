@@ -17,6 +17,9 @@ const char *correct = "correctness_check";
 const char *gather = "MPI_Gather";
 const char *scatter = "MPI_Scatter";
 
+int SORT_TYPE; // 1: random, 2: reverse, 3: sorted, 4: 1%
+std::string SORT_TYPE_STR;
+
 int random_int()
 {
     return (int)rand();
@@ -24,8 +27,7 @@ int random_int()
 
 void array_fill(int *arr, int length, int sort_type)
 {
-
-//fill array with random values
+  //fill array with random values
   if (sort_type == 1) 
   {
     srand(time(NULL));
@@ -34,6 +36,7 @@ void array_fill(int *arr, int length, int sort_type)
     {
       arr[i] = random_int();
     }
+    SORT_TYPE_STR = "random";
   }
   //reverse sorted array
   else if (sort_type == 2) 
@@ -43,6 +46,7 @@ void array_fill(int *arr, int length, int sort_type)
     {
       arr[i] = length - i;
     }
+    SORT_TYPE_STR = "reverse";
   }
   //sorted array
   else if (sort_type == 3) 
@@ -52,6 +56,7 @@ void array_fill(int *arr, int length, int sort_type)
     {
       arr[i] = i;
     }
+    SORT_TYPE_STR = "sorted";
   }
   // 1% perturbation of the array
   else if(sort_type == 4)
@@ -68,6 +73,7 @@ void array_fill(int *arr, int length, int sort_type)
         arr[i] = i;
       }
     }
+    SORT_TYPE_STR = "1% perturbation";
   }
   else
   {
@@ -209,6 +215,7 @@ int main(int argc, char **argv)
     int rank, size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
+    SORT_TYPE = std::stoi(argv[2]);
 
     // Create caliper ConfigManager object
     cali::ConfigManager mgr;
@@ -223,7 +230,7 @@ int main(int argc, char **argv)
         CALI_MARK_BEGIN(data_init);
         // Initialize the array with random values on the root process
         arr = (int *)malloc(n * sizeof(int));
-        array_fill(arr, n);
+        array_fill(arr, n, SORT_TYPE);
         // End of Data Init
         CALI_MARK_END(data_init);
     }
@@ -265,7 +272,7 @@ int main(int argc, char **argv)
     adiak::value("Datatype", "Int");                     // The datatype of input elements (e.g., double, int, float)
     adiak::value("SizeOfDatatype", sizeof(int));         // sizeof(datatype) of input elements in bytes (e.g., 1, 2, 4)
     adiak::value("InputSize", n);                        // The number of elements in input dataset (1000)
-    adiak::value("InputType", "Random");                 // For sorting, this would be "Sorted", "ReverseSorted", "Random", "1%perturbed"
+    adiak::value("InputType", SORT_TYPE_STR);                 // For sorting, this would be "Sorted", "ReverseSorted", "Random", "1%perturbed"
     adiak::value("num_procs", size);                     // The number of processors (MPI ranks)
     adiak::value("group_num", "11");                     // The number of your group (integer, e.g., 1, 10)
     adiak::value("implementation_source", "Online, AI"); // Where you got the source code of your algorithm; choices: ("Online", "AI", "Handwritten").

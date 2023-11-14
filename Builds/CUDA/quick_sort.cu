@@ -25,7 +25,7 @@ int THREADS;
 int BLOCKS;
 int NUM_VALS;
 int SORT_TYPE; // 1: random, 2: reverse, 3: sorted, 4: 1%
-float SORT_TYPE_STR;
+std::string SORT_TYPE_STR;
 
 void print_elapsed(clock_t start, clock_t stop)
 {
@@ -40,8 +40,7 @@ int random_int()
 
 void array_fill(int *arr, int length, int sort_type)
 {
-
-//fill array with random values
+  //fill array with random values
   if (sort_type == 1) 
   {
     srand(time(NULL));
@@ -50,7 +49,7 @@ void array_fill(int *arr, int length, int sort_type)
     {
       arr[i] = random_int();
     }
-    SORT_TYPE_STR = "Random";
+    SORT_TYPE_STR = "random";
   }
   //reverse sorted array
   else if (sort_type == 2) 
@@ -60,7 +59,7 @@ void array_fill(int *arr, int length, int sort_type)
     {
       arr[i] = length - i;
     }
-    SORT_TYPE_STR = "Reverse";
+    SORT_TYPE_STR = "reverse";
   }
   //sorted array
   else if (sort_type == 3) 
@@ -70,7 +69,7 @@ void array_fill(int *arr, int length, int sort_type)
     {
       arr[i] = i;
     }
-    SORT_TYPE_STR = "Sorted";
+    SORT_TYPE_STR = "sorted";
   }
   // 1% perturbation of the array
   else if(sort_type == 4)
@@ -87,7 +86,7 @@ void array_fill(int *arr, int length, int sort_type)
         arr[i] = i;
       }
     }
-    SORT_TYPE_STR = "1% Perturbation";
+    SORT_TYPE_STR = "1% perturbation";
   }
   else
   {
@@ -258,7 +257,7 @@ int main(int argc, char *argv[])
     CALI_MARK_BEGIN(data_init);
     int *random_values = (int *)malloc(NUM_VALS * sizeof(int));
 
-    array_fill(random_values, NUM_VALS, SORT_TYPE);
+    array_fill(random_values, NUM_VALS);
     // End of Data Init
     CALI_MARK_END(data_init);
 
