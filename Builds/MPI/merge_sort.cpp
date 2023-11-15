@@ -278,7 +278,7 @@ int main(int argc, char** argv) {
     adiak::value("Datatype", "Int");                          // The datatype of input elements (e.g., double, int, float)
     adiak::value("SizeOfDatatype", sizeof(int));              // sizeof(datatype) of input elements in bytes (e.g., 1, 2, 4)
     adiak::value("InputSize", n);                        // The number of elements in input dataset (1000)
-    adiak::value("InputType", "Random");                        // For sorting, this would be "Sorted", "ReverseSorted", "Random", "1%perturbed"
+    adiak::value("InputType", SORT_TYPE_STR);                        // For sorting, this would be "Sorted", "ReverseSorted", "Random", "1%perturbed"
     adiak::value("num_procs", size);                        // The number of processors (MPI ranks)
     adiak::value("group_num", "11");                     // The number of your group (integer, e.g., 1, 10)
     adiak::value("implementation_source", "Online, AI"); // Where you got the source code of your algorithm; choices: ("Online", "AI", "Handwritten").
