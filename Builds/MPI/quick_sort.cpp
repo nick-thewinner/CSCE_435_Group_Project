@@ -240,7 +240,7 @@ int main(int argc, char **argv)
     if (rank == 0)
     {
         // Print the sorted array on the root process
-        array_print(arr,n);
+        //array_print(arr,n);
         // Start of correctness check
         CALI_MARK_BEGIN(correct);
         if (correctness_check(arr, n))
@@ -255,8 +255,6 @@ int main(int argc, char **argv)
         CALI_MARK_END(correct);
         free(arr);
     }
-
-    MPI_Finalize();
 
     // End of main
     CALI_MARK_END(main_region);
@@ -281,6 +279,8 @@ int main(int argc, char **argv)
 
     mgr.stop();
     mgr.flush();
+
+    MPI_Finalize();
 
     return 0;
 }

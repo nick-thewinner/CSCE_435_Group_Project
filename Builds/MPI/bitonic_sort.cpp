@@ -230,7 +230,7 @@ int main(int argc, char **argv)
         // End of Comp
         CALI_MARK_END(comp);
 
-        array_print(arr, n);
+        //array_print(arr, n);
         // Start of correctness check
         CALI_MARK_BEGIN(correct);
         if (correctness_check(arr,n)) {
@@ -249,7 +249,6 @@ int main(int argc, char **argv)
         free(arr);
     }
 
-    MPI_Finalize();
     // End of Main
     CALI_MARK_END(main_region);
 
@@ -272,6 +271,8 @@ int main(int argc, char **argv)
     // Flush Caliper output before finalizing MPI
     mgr.stop();
     mgr.flush();
+
+    MPI_Finalize();
 
     return 0;
 }

@@ -240,7 +240,16 @@ int main(int argc, char** argv) {
 
     if (rank == 0) {
         // Print the sorted array on the root process
-        array_print(arr, n);
+        //array_print(arr, n);
+        // Start of Comp 
+        CALI_MARK_BEGIN(comp);
+        // Start of CompLarge
+        CALI_MARK_BEGIN(comp_large);
+        mergeSort(arr, temp, 0, n);
+        // End of CompLarge
+        CALI_MARK_END(comp_large);
+        // End of Comp
+        CALI_MARK_END(comp);
         // Start of correctness check
         CALI_MARK_BEGIN(correct);
         if (correctness_check(arr,n)) {
@@ -254,7 +263,6 @@ int main(int argc, char** argv) {
     }
 
     free(temp);
-    MPI_Finalize();
 
     // End of Main
     CALI_MARK_END(main_region);
@@ -278,6 +286,8 @@ int main(int argc, char** argv) {
     // Flush Caliper output before finalizing MPI
     mgr.stop();
     mgr.flush();
+
+    MPI_Finalize();
 
     return 0;
 }
