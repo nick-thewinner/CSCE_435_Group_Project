@@ -472,13 +472,13 @@ Bubble Sort Function:
 ![image](https://github.com/nick-thewinner/CSCE_435_Group_Project/assets/123513631/3cb697e2-4545-4142-b112-d26209a60b98)
 
 Observation:
-- The data shows a pretty consistent time across all input values on all threads, but the higher the amount of input values the hire the time. This makes sense because overall there are more values to sort through. An interesting finding would be a spike for the the lowest input value amount when using higher thread counts, this was seen in a previous lab where at a point it becomes inefficient to have a higher thread count when it comes to a smaller set.
+- The data shows a pretty consistent time across all input values on all threads, but the higher the amount of input values the higher the time. This makes sense because overall there are more values to sort through. An interesting finding would be a spike for the the lowest input value amount when using higher thread counts, this was seen in a previous lab where at a point it becomes inefficient to have a higher thread count when it comes to a smaller set.
 
 # Merge Random Input Type Plot CUDA
 ![image](https://github.com/nick-thewinner/CSCE_435_Group_Project/assets/123513631/6dc13810-ec9f-436d-80b8-62c505c80244)
 
 Observation:
-- The data shows a pretty consistent time across all input values on all threads, but the higher the amount of input values the hire the time. This makes sense because overall there are more values to sort through. Soemthing interesting that occured would be the nearly identical GPU time and overall run time for the highest input value amount.
+- The data shows a pretty consistent time across all input values on all threads, but the higher the amount of input values the higher the time. This makes sense because overall there are more values to sort through. Soemthing interesting that occured would be the nearly identical GPU time and overall run time for the highest input value amount.
 
 
 # Bubble Random Input Type Plot CUDA
@@ -488,16 +488,26 @@ Observation:
 # Bitonic Random Input Type Plot MPI
 ![image](https://github.com/nick-thewinner/CSCE_435_Group_Project/assets/123513631/e092a409-d282-47da-aa72-869f47d0618a)
 
+Observation:
+- The data shows a pretty consistent increase in time as processes and input size increase, this may be because it is run on a network.
+
 
 # Merge Random Input Type Plot MPI
 ![image](https://github.com/nick-thewinner/CSCE_435_Group_Project/assets/123513631/b8a17638-d599-4e6c-b2af-ad660b406b43)
 
+Observation:
+- Similar to bitonic sort MPI, the data shows a pretty consistent increase in time as processes and input size increase, this may be because it is run on a network.
 
-# Bubble Random Input Type Plot MPI
+
+# Bubble Sorted Input Type Plot MPI
+![image](https://github.com/nick-thewinner/CSCE_435_Group_Project/assets/34899573/59db8acb-4807-4303-85a5-0ee3bde7a1cb)
+
+Observation:
+TBD
 
 # Quick Random Input Type Plot MPI
 
 # Final Observations
-
+- In CUDA it seems it is better for weak scaling because as we increase number of threads and input values, the time still seems to be consistent. Opposed to MPI where weak scaling does not seem to be optimal as there is a positive trend.
 
 
