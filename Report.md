@@ -482,8 +482,11 @@ Observation:
 
 
 # Bubble Random Input Type Plot CUDA
+Observation: the data indicates a steady increase in time as the input size grows.
+
 
 # Quick Random Input Type Plot CUDA
+Observation demonstrates a more moderate increase in time relative to the input size.
 
 # Bitonic Random Input Type Plot MPI
 ![image](https://github.com/nick-thewinner/CSCE_435_Group_Project/assets/123513631/e092a409-d282-47da-aa72-869f47d0618a)
