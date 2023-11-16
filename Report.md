@@ -506,7 +506,7 @@ Observation:
 ![image](https://github.com/nick-thewinner/CSCE_435_Group_Project/assets/34899573/59db8acb-4807-4303-85a5-0ee3bde7a1cb)
 
 Observation:
-TBD
+- Similar to the other plots, the data shows that the time is increasing as the number of processes increases and as the size of the array increases. The smallest array size, however, shows a relatively shallow slope in comparison to the other ones.
 
 # Quick Random Input Type Plot MPI
 
