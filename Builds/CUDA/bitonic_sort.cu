@@ -251,7 +251,7 @@ int main(int argc, char *argv[])
 
   print_elapsed(start, stop);
   
-  array_print(random_values, NUM_VALS);
+  // array_print(random_values, NUM_VALS);
   // Start of correctness check
   CALI_MARK_BEGIN(correct);
   if (correctness_check(random_values, NUM_VALS)) {
