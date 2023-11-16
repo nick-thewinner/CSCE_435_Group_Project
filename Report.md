@@ -468,8 +468,36 @@ Bubble Sort Function:
 
 - The normal function quick_sort manages the overall sorting process. It allocates memory on the GPU for the data and the stack arrays and copies the initial data from the host to the GPU. It uses a loop to repeatedly invoke the partition kernel until the array is fully sorted, with the sorted segments growing larger with each iteration. After sorting, it transfers the sorted array back to the host memory and frees the GPU memory. 
  
+# Bitonic Random Input Type Plot CUDA
+![image](https://github.com/nick-thewinner/CSCE_435_Group_Project/assets/123513631/3cb697e2-4545-4142-b112-d26209a60b98)
+
+Observation:
+- The data shows a pretty consistent time across all input values on all threads, but the higher the amount of input values the hire the time. This makes sense because overall there are more values to sort through. An interesting finding would be a spike for the the lowest input value amount when using higher thread counts, this was seen in a previous lab where at a point it becomes inefficient to have a higher thread count when it comes to a smaller set.
+
+# Merge Random Input Type Plot CUDA
+![image](https://github.com/nick-thewinner/CSCE_435_Group_Project/assets/123513631/6dc13810-ec9f-436d-80b8-62c505c80244)
+
+Observation:
+- The data shows a pretty consistent time across all input values on all threads, but the higher the amount of input values the hire the time. This makes sense because overall there are more values to sort through. Soemthing interesting that occured would be the nearly identical GPU time and overall run time for the highest input value amount.
 
 
+# Bubble Random Input Type Plot CUDA
+
+# Quick Random Input Type Plot CUDA
+
+# Bitonic Random Input Type Plot MPI
+![image](https://github.com/nick-thewinner/CSCE_435_Group_Project/assets/123513631/e092a409-d282-47da-aa72-869f47d0618a)
+
+
+# Merge Random Input Type Plot MPI
+![image](https://github.com/nick-thewinner/CSCE_435_Group_Project/assets/123513631/b8a17638-d599-4e6c-b2af-ad660b406b43)
+
+
+# Bubble Random Input Type Plot MPI
+
+# Quick Random Input Type Plot MPI
+
+# Final Observations
 
 
 
