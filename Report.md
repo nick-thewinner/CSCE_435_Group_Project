@@ -499,7 +499,11 @@ Observation:
 - Similar to bitonic sort MPI, the data shows a pretty consistent increase in time as processes and input size increase, this may be because it is run on a network.
 
 
-# Bubble Random Input Type Plot MPI
+# Bubble Sorted Input Type Plot MPI
+![image](https://github.com/nick-thewinner/CSCE_435_Group_Project/assets/34899573/59db8acb-4807-4303-85a5-0ee3bde7a1cb)
+
+Observation:
+TBD
 
 # Quick Random Input Type Plot MPI
 
