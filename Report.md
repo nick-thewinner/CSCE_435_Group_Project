@@ -517,7 +517,7 @@ Observation:
 
 ## The Plots 
 
-The plots can be seen in this Google Doc: 
+The plots can be seen in this Google Doc: https://docs.google.com/document/d/1nc6wON_MOL7XFeRSu65jXC7z7FEGBnIomcGJwNWotKY/edit#heading=h.gngmqtlgzdt
 
 ## Observations 
 
