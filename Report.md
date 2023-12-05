@@ -513,12 +513,12 @@ Observation:
 # Final Observations
 - In CUDA it seems it is better for weak scaling because as we increase number of threads and input values, the time still seems to be consistent. Opposed to MPI where weak scaling does not seem to be optimal as there is a positive trend.
 
-## Presentation 
+# Presentation 
 
-# The Plots 
+## The Plots 
 
 The plots can be seen in this Google Doc: 
 
-# Observations 
+## Observations 
 
 
