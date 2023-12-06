@@ -467,58 +467,66 @@ Bubble Sort Function:
 - The core of this code is the partition kernel, which is responsible for partitioning the array segments. Each thread takes a segment of the array, determined by stack_l and stack_h arrays, and partitions it around a pivot element, swapping elements to ensure all values less than the pivot are on the left, and all values greater are on the right. Following the partitioning, each thread dynamically updates the stack with indices of the new segments to be sorted, utilizing atomic operations to avoid conflicts when multiple threads try to update the stack size simultaneously.
 
 - The normal function quick_sort manages the overall sorting process. It allocates memory on the GPU for the data and the stack arrays and copies the initial data from the host to the GPU. It uses a loop to repeatedly invoke the partition kernel until the array is fully sorted, with the sorted segments growing larger with each iteration. After sorting, it transfers the sorted array back to the host memory and frees the GPU memory. 
- 
-# Bitonic Random Input Type Plot CUDA
-![image](https://github.com/nick-thewinner/CSCE_435_Group_Project/assets/123513631/3cb697e2-4545-4142-b112-d26209a60b98)
-
-Observation:
-- The data shows a pretty consistent time across all input values on all threads, but the higher the amount of input values the higher the time. This makes sense because overall there are more values to sort through. An interesting finding would be a spike for the the lowest input value amount when using higher thread counts, this was seen in a previous lab where at a point it becomes inefficient to have a higher thread count when it comes to a smaller set.
-
-# Merge Random Input Type Plot CUDA
-![image](https://github.com/nick-thewinner/CSCE_435_Group_Project/assets/123513631/6dc13810-ec9f-436d-80b8-62c505c80244)
-
-Observation:
-- The data shows a pretty consistent time across all input values on all threads, but the higher the amount of input values the higher the time. This makes sense because overall there are more values to sort through. Soemthing interesting that occured would be the nearly identical GPU time and overall run time for the highest input value amount.
 
 
-# Bubble Random Input Type Plot CUDA
-Observation: the data indicates a steady increase in time as the input size grows.
 
-
-# Quick Random Input Type Plot CUDA
-Observation demonstrates a more moderate increase in time relative to the input size.
-
-# Bitonic Random Input Type Plot MPI
-![image](https://github.com/nick-thewinner/CSCE_435_Group_Project/assets/123513631/e092a409-d282-47da-aa72-869f47d0618a)
-
-Observation:
-- The data shows a pretty consistent increase in time as processes and input size increase, this may be because it is run on a network.
-
-
-# Merge Random Input Type Plot MPI
-![image](https://github.com/nick-thewinner/CSCE_435_Group_Project/assets/123513631/b8a17638-d599-4e6c-b2af-ad660b406b43)
-
-Observation:
-- Similar to bitonic sort MPI, the data shows a pretty consistent increase in time as processes and input size increase, this may be because it is run on a network.
-
-
-# Bubble Sorted Input Type Plot MPI
-![image](https://github.com/nick-thewinner/CSCE_435_Group_Project/assets/34899573/59db8acb-4807-4303-85a5-0ee3bde7a1cb)
-
-Observation:
-- Similar to the other plots, the data shows that the time is increasing as the number of processes increases and as the size of the array increases. The smallest array size, however, shows a relatively shallow slope in comparison to the other ones.
-
-# Quick Random Input Type Plot MPI
-
-# Final Observations
-- In CUDA it seems it is better for weak scaling because as we increase number of threads and input values, the time still seems to be consistent. Opposed to MPI where weak scaling does not seem to be optimal as there is a positive trend.
-
-# Presentation 
-
-## The Plots 
+# Evaluation/Observations
 
 The plots can be seen in this Google Doc: https://docs.google.com/document/d/1nc6wON_MOL7XFeRSu65jXC7z7FEGBnIomcGJwNWotKY/edit#heading=h.gngmqtlgzdt
 
-## Observations 
+# Bubble Plot CUDA
+Observation: 
 
+# Bubble Plot MPI
+Observation:
+- Similar to the other plots, the data shows that the time is increasing as the number of processes increases and as the size of the array increases. The smallest array size, however, shows a relatively shallow slope in comparison to the other ones.
+
+# Quick Plot CUDA
+Observation:
+
+# Quick Plot MPI
+Observation:
+
+# Bitonic Plot CUDA
+Observation:
+-   Strong Scaling
+    -   For strong scaling, we can see that in our first set of plots with a smaller input size, everything seems to be pretty constant excluding random input type. For the most part we can tell that there is tiny increase in runtime as the tread increase and we can assume that may be from the overhead of having too many threads for a small set of data. This is also supported by the better downward trends as our input size grows. It also seems the trends seen are consistent across comp_large, comm, and main the only slight deviation would be a slight higher runtime on the smaller threads in main.
+-   Speed up
+    -   For the sped up plots, it seems our results from strong scaling are shown much better with half of the input types having a slight speedup intially then a drop, and the other half of the inputs seems to just decrease in speed up right outside the gate. It also seems that with the large and smaller input sizes the speed ups are not as good compared a size like 2^12. Interestingly enough, it also seems that the sorted input type was the worst, but this may be becaause even tho the data is sorted, it still gets split up and set in bitonic order then remerged together
+-   Weak Scaling
+    -   For the most part our data seems to be pretty constant for comp_large; however, with comm and main there seems to be some variation. The variation with comm seems to be expected as it's more abnormal with the smaller and larger thread count ends. The variation in main is very sparatic and we can't really correlate it much with anything beside it being an accumulation of multiple variables. Overall, the data seems to be correct when comparing comp_large across all input types as in comp_large plots the run times increase as the input size increases but the times seems to stay constant when the threads increase.
+# Bitonic Plot MPI
+Observation:
+-   Strong Scaling
+    -   For strong scaling, comp_large and comm are increasing over time for all of the input sizes. This makes sense for comm since there is more overhead for communicating between processes. The comp_large section is a little weird since more processes should split up the large computing and decrease the runtime, but one potential reason why it’s increasing is due to how we set up the section and that it performs one last merge. We can see this if we look at the comp section which shows a decrease in runtime with more processes. The main section decreases to a certain point on all 3 input sizes (4, 8, 32) and then increases in runtime. This shows that the implementation hits an optimal number of processes and then starts to be less efficient when the number of processes increases.
+-   Speed Up
+    -   For the speedup, the comp_large decreases in speedup. We weren’t really sure why it was decreasing, but when we looked at the comp section for speedup, the plot was increasing. Both the comm and main sections increased to a certain processor size and started to decrease afterward. The main makes sense we know it hits an optimal process count and becomes less efficient in a bigger process count. The comm section is interesting since the strong scale plot was decreasing for the most part, but the speedup graph shows it increasing to a certain process size and starting to fall off after.
+-   Weak Scaling
+    -   For weak scaling, comp_large is relatively flat. This shows that our program has good weak scaling for large computations. Both main and comm plots are increasing overall (with some plots decreasing and then increasing). This shows that the main and comm sections don't have good weak scaling since the runtimes increase with more processes.
+
+
+# Merge Plot CUDA
+Observation:
+-   Strong Scaling
+    -   For strong scaling, in our smaller input size plots, our trend lines are mostly constant or maybe very slightly descreasing. The only outlier would be for random input size and witht he larger thread counts. It seems as the input size increases the trend seems ot be more emphasised more and more. Many of the ionputs have a decreaing time as the thread count increases which is good and shows good scaling and parallelism but there are some that seems to spike.
+-   Speed Up
+    -   
+-   Weak Scaling
+    -   
+
+# Merge Plot MPI
+Observation:
+-   Strong Scaling
+    -   For strong scaling, all three sections are increasing overall. The comp_large section is strictly increasing why the other two sections have a dip. The main section makes sense since it hits an optimal process count and starts to decrease in performance afterward. The comm section increase is most likely due to the increase in overhead for communication between processes. The comp_large section could be increasing due to needing to compute with multiplier threads and merge back together.
+-   Speed Up
+    -   For the speed up, all three sections are decreasing overall. The comp_large section decreasing reflects the overhead issue of computation on a single process for merging. The comm and main sections increase to a certain amount of processes and then decrease. For main this correlates to the optimal amount of processes, but the comm section is interesting since it should be slower with the overhead.
+-   Weak Scaling
+    -   For weak scaling, comp_large has good weak scaling as it is relatively flat. Both comm and main plots increase overall. This shows that both sections have poor weak scaling since the runtime is increasing due to overhead and other factors.
+
+# Comparison Plot CUDA
+
+# Comparison Plot MPI
+
+# Final Observations
+- In CUDA it seems it is better for weak scaling because as we increase number of threads and input values, the time still seems to be consistent. Opposed to MPI where weak scaling does not seem to be optimal as there is a positive trend.
 
