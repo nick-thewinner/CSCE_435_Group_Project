@@ -476,13 +476,25 @@ The plots can be seen in this Google Doc: https://docs.google.com/document/d/1nc
 
 # Bubble Plot CUDA
 Observation: 
+- Strong Scaling
+    - The CUDA-based bubble sort implementation shows improved performance. The best performance being at the thread count of 256. As the number of threads increases, there is a slight reduction in execution times. The best performance at 256 threads might show that there might be a balance between parralization and resources. Beyond 256 threads, we hypothesize that there is increased overhead that leads to more hardm than good. 
+- Speed Up
+    - The speedup in the CUDA implementation of bubble sort strongly makes sense given the execution time. There is notable speedup until reaching 256 threads. Up to this point, increasing the amount of threads leads to enhanced performance. However, after 256 threads, the speedup begins to go down. This decrease we think is likely attributed to factors such as increased overhead.
+- Weak Scaling
+    - The graphs for quick sort are flat, and this is expected. This flatness demonstrates our quick sort implmentation can efficiently scale with an increase in the number of thread while maintaining a fixed problem size per thread.
 
 # Bubble Plot MPI
 Observation:
 - Similar to the other plots, the data shows that the time is increasing as the number of processes increases and as the size of the array increases. The smallest array size, however, shows a relatively shallow slope in comparison to the other ones.
 
 # Quick Plot CUDA
-Observation:
+Observation: 
+- Strong Scaling
+    - Quick sort is a naturally a sequential algorithim. This is due to its recurisve and sequential nature. While we did parralilize the algorithim by paritioning the input array and treating them as seperate problems, the dependencies and synchronization points limit the benifts of parralizing it. Therefore, as the number of threads increases, there is not a significant decrease in time. The overhead of managing threads and synchronization cancels out the benefits of parallelization. There would be more significant changes if our implmentation of quick sort is more optimal.
+- Speed up
+    - On average, parallelized quicksort shows a slight speedup, though with somevariability. While attempts to parallelize the algorithm lead to slight improvements in execution time, the challenges of dependencies and synchronization persists. The variability in speedup most likely comes from the parallelization implmentation that was used. Despite the potential for increased parallelism, the overall benefits might size and characteristics of the input data, as well as the efficiencynot be consistently significant. 
+- Weak Scaling
+    - The graphs for quick sort are flat, and this is expected. This flatness demonstrates our quick sort implmentation can efficiently scale with an increase in the number of thread while maintaining a fixed problem size per thread.
 
 # Quick Plot MPI
 Observation:
@@ -508,11 +520,11 @@ Observation:
 # Merge Plot CUDA
 Observation:
 -   Strong Scaling
-    -   For strong scaling, in our smaller input size plots, our trend lines are mostly constant or maybe very slightly descreasing. The only outlier would be for random input size and witht he larger thread counts. It seems as the input size increases the trend seems ot be more emphasised more and more. Many of the ionputs have a decreaing time as the thread count increases which is good and shows good scaling and parallelism but there are some that seems to spike.
+    -   For strong scaling, in our smaller input size plots, our trend lines are mostly constant or maybe very slightly descreasing. The only outlier would be for random and sorted input types. For the input type lines that do seem to be doing well, they seem to decrease in runtime intitally but then evetually increase backup. Although they go back up they don't reach their intial runtime so there will be some speedup.
 -   Speed Up
-    -   
+    -   The speed up is essentailly what we expected to see based off of our strong scaling. On the input types that actually do speed up, they seem to have a good sharp increase at on the smaller count of threads, but as the thread counts increase there is a decrease in speedup but it still remains above 1. Interestingly enough for reverse and sorted input type, the shape of their lines are the complete opposite, with an intial drop in speed up and then the eventual increase which hits around or above 1.0.
 -   Weak Scaling
-    -   
+    -   For comp_large it seems that the weak scaling plots are great with all of them being almost perfectly constant with no little to no positive or negative trend. For both comm and main there seems to be some random trends.
 
 # Merge Plot MPI
 Observation:
@@ -524,9 +536,12 @@ Observation:
     -   For weak scaling, comp_large has good weak scaling as it is relatively flat. Both comm and main plots increase overall. This shows that both sections have poor weak scaling since the runtime is increasing due to overhead and other factors.
 
 # Comparison Plot CUDA
-
+    - Looking at the comparison graphs for all the CUDA implmentations, it is clear that bitonic and merge sort outperform bubble and quicksort significantly. This faster execution time of bitonic and merge sort is most likely because of their intrinsic parallel nature, making them better suited for parralelization. On the other hand, bubble and quicksort, are known as sequential algorithms, and face challenges in achieving efficient parallelization. 
+    
+    - Furthemore, the inefficiency in quicksort may be due to communication overhead between threads, a consequence of its recursive implmentation. This implmentation can be shown as a parrallel one because all the comm plots show an overhead that is significant. Additionally, another thing is that the parallelization of quicksort might not have been optimized. In contrast, bitonic and merge sort are easy to parralize, and that is shown in these comparison graphs.This analysis shows that naturally some algorthims perform better than others when parallelized and it also highlights potential impact that overhead might have in increasing execution times.
+    
 # Comparison Plot MPI
 
 # Final Observations
-- In CUDA it seems it is better for weak scaling because as we increase number of threads and input values, the time still seems to be consistent. Opposed to MPI where weak scaling does not seem to be optimal as there is a positive trend.
+- In CUDA it seems it is better for weak scaling because as we increase number of threads and input values, the time still seems to be consistent. Opposed to MPI where weak scaling does not seem to be optimal as there is a positive trend. It also seems that looking into our MPI implementaions vs CUDA, our MPI data seems to be more cosnsitent amongst the plots, this includes much more defined trend lines and better spikes and associaties when it comes to correlations such as threads. The data also seems to be more conssitent amongst every input type and more reliant on the thread count.
 
