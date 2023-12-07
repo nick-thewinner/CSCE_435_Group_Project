@@ -484,20 +484,32 @@ Observation:
     - The graphs for quick sort are flat, and this is expected. This flatness demonstrates our quick sort implmentation can efficiently scale with an increase in the number of thread while maintaining a fixed problem size per thread.
 
 # Bubble Plot MPI
-Observation:
-- Similar to the other plots, the data shows that the time is increasing as the number of processes increases and as the size of the array increases. The smallest array size, however, shows a relatively shallow slope in comparison to the other ones.
+Observation: 
+(Note: Our bubble sort algorithm did not work in parellel for the in-class presentation, but we were able to parallelize it post-presentation.)
+- Strong Scaling
+    - Although bubble sort is a naturally sequential algorithm, we were able to partially parellelize it using odd-even bubble sort by splitting the array evenly among the number of processes and assigning each process an equal portion of the array. However, once each sub-section of the array was sorted, we had to use merge sort to fully sort the array. We can observe potential in the improvements of parallelization of the algorithms based on the negative slops in the strong scaling graphs, however, this change seems to be negligible for large array sizes.
+- Speed up
+    - We can see clear signs of speedup in the speedup graphs for Bubble MPI which shows strong signs of parallel nature. For larger array sizes such as 2^22, this speedup is not as prevalent, likely due to the bottlenecks and overhead that our implementation of odd-even bubble sort provides.
+- Weak Scaling
+    - For the most part, the graphs for the weak scaling for Bubble MPI are flat which shows positive indications of correct scaling as the number of threads and the number of values in the array increase simultaneously. 
 
 # Quick Plot CUDA
 Observation: 
 - Strong Scaling
     - Quick sort is a naturally a sequential algorithim. This is due to its recurisve and sequential nature. While we did parralilize the algorithim by paritioning the input array and treating them as seperate problems, the dependencies and synchronization points limit the benifts of parralizing it. Therefore, as the number of threads increases, there is not a significant decrease in time. The overhead of managing threads and synchronization cancels out the benefits of parallelization. There would be more significant changes if our implmentation of quick sort is more optimal.
 - Speed up
-    - On average, parallelized quicksort shows a slight speedup, though with somevariability. While attempts to parallelize the algorithm lead to slight improvements in execution time, the challenges of dependencies and synchronization persists. The variability in speedup most likely comes from the parallelization implmentation that was used. Despite the potential for increased parallelism, the overall benefits might size and characteristics of the input data, as well as the efficiencynot be consistently significant. 
+    - On average, parallelized quicksort shows a slight speedup, though with somevariability. While attempts to parallelize the algorithm lead to slight improvements in execution time, the challenges of dependencies and synchronization persists. The variability in speedup most likely comes from the parallelization implmentation that was used. Despite the potential for increased parallelism, the overall benefits might size and characteristics of the input data, as well as the efficiency not be consistently significant. 
 - Weak Scaling
     - The graphs for quick sort are flat, and this is expected. This flatness demonstrates our quick sort implmentation can efficiently scale with an increase in the number of thread while maintaining a fixed problem size per thread.
 
 # Quick Plot MPI
-Observation:
+Observation: 
+- Strong Scaling
+    - Because of its intrinsic nature as a sequential algorithm, we did not see much time improvement as the number of threads increased, however there was some potential as seem in the comp_large thread of the 2^16 graph.
+- Speed up
+    - We can see clear signs of speedup as most of the speedup graphs exhibit positive slopes which shows improvements in the time as the number of processes increases.
+- Weak Scaling
+    - The graphs for quick sort are flat, and this is expected. This flatness demonstrates our quick sort implmentation can efficiently scale with an increase in the number of thread while maintaining a fixed problem size per thread (same as CUDA).
 
 # Bitonic Plot CUDA
 Observation:
@@ -536,12 +548,12 @@ Observation:
     -   For weak scaling, comp_large has good weak scaling as it is relatively flat. Both comm and main plots increase overall. This shows that both sections have poor weak scaling since the runtime is increasing due to overhead and other factors.
 
 # Comparison Plot CUDA
-    - Looking at the comparison graphs for all the CUDA implmentations, it is clear that bitonic and merge sort outperform bubble and quicksort significantly. This faster execution time of bitonic and merge sort is most likely because of their intrinsic parallel nature, making them better suited for parralelization. On the other hand, bubble and quicksort, are known as sequential algorithms, and face challenges in achieving efficient parallelization. 
+- Looking at the comparison graphs for all the CUDA implmentations, it is clear that bitonic and merge sort outperform bubble and quicksort significantly. This faster execution time of bitonic and merge sort is most likely because of their intrinsic parallel nature, making them better suited for parralelization. On the other hand, bubble and quicksort, are known as sequential algorithms, and face challenges in achieving efficient parallelization. 
     
-    - Furthemore, the inefficiency in quicksort may be due to communication overhead between threads, a consequence of its recursive implmentation. This implmentation can be shown as a parrallel one because all the comm plots show an overhead that is significant. Additionally, another thing is that the parallelization of quicksort might not have been optimized. In contrast, bitonic and merge sort are easy to parralize, and that is shown in these comparison graphs.This analysis shows that naturally some algorthims perform better than others when parallelized and it also highlights potential impact that overhead might have in increasing execution times.
+- Furthemore, the inefficiency in quicksort may be due to communication overhead between threads, a consequence of its recursive implmentation. This implmentation can be shown as a parrallel one because all the comm plots show an overhead that is significant. Additionally, another thing is that the parallelization of quicksort might not have been optimized. In contrast, bitonic and merge sort are easy to parralize, and that is shown in these comparison graphs.This analysis shows that naturally some algorthims perform better than others when parallelized and it also highlights potential impact that overhead might have in increasing execution times.
     
 # Comparison Plot MPI
-    - Based on the comparison plots for the MPI implementations, the merge and bitonic sorts are the best sorts. They run faster for all thread counts. This is likely true because they are easily parellelizable.
+- Based on the comparison plots for the MPI implementations, the merge and bitonic sorts are the best sorts. They run faster for all thread counts. This is likely true because they are easily parellelizable in contrast to bubble and quick sort which have larger overheads causing bottlenecks at the root level. This is similar to the behavior of the CUDA runs as expected. Our bubble sort algorithm was implemented using odd-even bubble sort which adds a parallel nature to it, however, it still implements merge sort at the root level in order to combine all of the sorted arrays which adds new time constraints to it. Thus, we can conclude that naturally, if we want to parallelize an algorithm, merge and bitonic sort would be the proper direction to pursue.
     
 # Final Observations
 - In CUDA it seems it is better for weak scaling because as we increase number of threads and input values, the time still seems to be consistent. Opposed to MPI where weak scaling does not seem to be optimal as there is a positive trend. It also seems that looking into our MPI implementaions vs CUDA, our MPI data seems to be more cosnsitent amongst the plots, this includes much more defined trend lines and better spikes and associaties when it comes to correlations such as threads. The data also seems to be more conssitent amongst every input type and more reliant on the thread count.
